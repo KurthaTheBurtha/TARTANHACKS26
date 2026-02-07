@@ -1,34 +1,54 @@
+"use client";
+
 import { BillUpload } from "@/components/bill-upload";
+import { motion } from "framer-motion";
+import { ChevronRight, Shield } from "lucide-react";
 import Link from "next/link";
 
 export default function UploadPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center bg-gray-50 px-4 py-12 dark:bg-gray-950 sm:px-6 lg:px-8">
-      <div className="w-full max-w-2xl">
-        <Link
-          href="/"
-          className="mb-8 inline-flex items-center text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-        >
-          ← Back to home
-        </Link>
+    <main id="main-content" className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-16 px-6">
+      <motion.div
+        className="mx-auto max-w-4xl"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" className="mb-12 flex items-center gap-2 text-sm text-slate-500">
+          <Link
+            href="/"
+            className="transition-colors hover:text-slate-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trust focus-visible:ring-offset-2"
+          >
+            Home
+          </Link>
+          <ChevronRight className="h-4 w-4 text-slate-400" />
+          <span className="font-medium text-slate-700">Bill Analyzer</span>
+        </nav>
 
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl">
+        {/* Header */}
+        <header className="mb-12">
+          <h1 className="text-4xl font-bold text-slate-900">
             Medical Bill Analyzer
           </h1>
-          <p className="mt-3 text-lg text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-lg text-slate-600">
             Upload your medical bill to find errors and overcharges
           </p>
-        </div>
+        </header>
 
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900/50 sm:p-8">
+        {/* Upload area */}
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
           <BillUpload />
         </div>
 
-        <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-          Your data is processed securely and not stored
-        </p>
-      </div>
-    </div>
+        {/* Footer disclaimer */}
+        <div className="mt-8 flex items-center gap-3 rounded-lg border border-trust/30 bg-trust/5 px-6 py-4">
+          <Shield className="h-5 w-5 shrink-0 text-trust" />
+          <p className="text-base text-slate-600">
+            Your data is processed securely and never stored
+          </p>
+        </div>
+      </motion.div>
+    </main>
   );
 }

@@ -1,7 +1,11 @@
 "use client";
 
-import { FileText, DollarSign, Building2, Shield } from "lucide-react";
+import { motion } from "framer-motion";
+import { FileText, DollarSign, Shield } from "lucide-react";
 import type { BillData, LineItem } from "@/lib/types";
+import { fadeIn, staggerContainer, staggerItem } from "@/lib/animations";
+import SavingsCard from "@/components/savings-card";
+import BillLineItem from "@/components/bill-line-item";
 
 function formatCurrency(value: number | null): string {
   if (value == null) return "—";
@@ -22,44 +26,70 @@ interface BillResultsProps {
 }
 
 export function BillResults({ billData }: BillResultsProps) {
-  const { patient_name, date_of_service, provider_name, provider_address, total_charges, line_items, insurance_info } = billData;
+  const {
+    patient_name,
+    date_of_service,
+    provider_name,
+    provider_address,
+    total_charges,
+    line_items,
+    insurance_info,
+  } = billData;
+
+  const billTotal = total_charges ?? 0;
+  const totalSavings = billData.total_savings ?? 0;
+  const errorsFound = billData.errors_found ?? 0;
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      className="mx-auto max-w-6xl space-y-6"
+      variants={fadeIn}
+      initial="initial"
+      animate="animate"
+    >
+      {/* Savings card - prominent at top */}
+      <div className="mb-8">
+        <SavingsCard
+          amount={totalSavings}
+          billTotal={billTotal}
+          errorsFound={errorsFound}
+        />
+      </div>
+
       {/* Patient & provider info card */}
-      <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
+      <div className="rounded-xl bg-white p-6 shadow-card md:p-8">
         <div className="mb-4 flex items-center gap-2">
-          <FileText className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <FileText className="h-5 w-5 text-slate-500" />
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Bill Details
           </h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
               Patient
             </p>
-            <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+            <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">
               {formatValue(patient_name)}
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
               Date of Service
             </p>
-            <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+            <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">
               {formatValue(date_of_service)}
             </p>
           </div>
           <div className="sm:col-span-2 lg:col-span-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
               Provider
             </p>
-            <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+            <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">
               {formatValue(provider_name)}
             </p>
             {provider_address && (
-              <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">
+              <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">
                 {provider_address}
               </p>
             )}
@@ -68,15 +98,15 @@ export function BillResults({ billData }: BillResultsProps) {
       </div>
 
       {/* Total charges */}
-      <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
+      <div className="rounded-xl bg-white p-6 shadow-card md:p-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <DollarSign className="h-5 w-5 text-slate-500" />
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               Total Charges
             </h2>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
             {formatCurrency(total_charges)}
           </p>
         </div>
@@ -84,95 +114,118 @@ export function BillResults({ billData }: BillResultsProps) {
 
       {/* Line items table */}
       {line_items.length > 0 && (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
-          <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-700">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Line Items
-              </h2>
-            </div>
+        <div className="rounded-xl bg-white p-6 shadow-card md:p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              Line Item Breakdown
+            </h2>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Items highlighted have been overcharged
+            </p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+          <div className="-mx-6 overflow-x-auto sm:mx-0">
+            <table className="w-full min-w-[640px] text-left text-sm" role="table" aria-label="Line item breakdown">
+              <caption className="sr-only">
+                Medical bill line items with status, description, charged amount, fair price, and savings
+              </caption>
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
-                  <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
+                <tr className="border-b border-slate-200 dark:border-slate-700">
+                  <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 sm:px-6">
+                    Status
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 sm:px-6">
                     Description
                   </th>
-                  <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">
-                    CPT Code
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 sm:px-6">
+                    Charged
                   </th>
-                  <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300 text-right">
-                    Qty
+                  <th scope="col" className="hidden px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 sm:table-cell sm:px-6">
+                    Fair Price
                   </th>
-                  <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300 text-right">
-                    Unit Price
-                  </th>
-                  <th className="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300 text-right">
-                    Total
+                  <th scope="col" className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 sm:px-6">
+                    Savings
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <motion.tbody
+                variants={staggerContainer}
+                initial="initial"
+                animate="animate"
+              >
                 {line_items.map((item: LineItem, index: number) => (
-                  <tr
+                  <BillLineItem
                     key={index}
-                    className={`border-b border-gray-100 last:border-0 dark:border-gray-700/50 ${
-                      index % 2 === 0
-                        ? "bg-white dark:bg-gray-900/50"
-                        : "bg-gray-50/50 dark:bg-gray-800/30"
-                    }`}
-                  >
-                    <td className="px-5 py-3 text-gray-900 dark:text-gray-100">
-                      {formatValue(item.description)}
-                    </td>
-                    <td className="px-5 py-3 text-gray-600 dark:text-gray-300">
-                      {formatValue(item.cpt_code)}
-                    </td>
-                    <td className="px-5 py-3 text-right text-gray-600 dark:text-gray-300">
-                      {item.quantity}
-                    </td>
-                    <td className="px-5 py-3 text-right text-gray-600 dark:text-gray-300">
-                      {formatCurrency(item.unit_price)}
-                    </td>
-                    <td className="px-5 py-3 text-right font-medium text-gray-900 dark:text-gray-100">
-                      {formatCurrency(item.total)}
-                    </td>
-                  </tr>
+                    description={item.description}
+                    cptCode={item.cpt_code}
+                    charged={item.total}
+                    fairPrice={item.fair_price ?? null}
+                    savings={item.savings ?? null}
+                    hasError={item.has_error ?? false}
+                    index={index}
+                    variants={staggerItem}
+                  />
                 ))}
-              </tbody>
+              </motion.tbody>
             </table>
           </div>
         </div>
       )}
 
       {/* Insurance information card */}
-      <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
+      <div className="rounded-xl bg-white p-6 shadow-card md:p-8">
         <div className="mb-4 flex items-center gap-2">
-          <Shield className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <Shield className="h-5 w-5 text-slate-500" />
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Insurance Information
           </h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <InsuranceItem label="Insurance Paid" value={insurance_info.insurance_paid} />
-          <InsuranceItem label="Patient Responsibility" value={insurance_info.patient_responsibility} />
-          <InsuranceItem label="Deductible Applied" value={insurance_info.deductible_applied} />
+          <InsuranceItem
+            label="Insurance Paid"
+            value={insurance_info.insurance_paid}
+          />
+          <InsuranceItem
+            label="Patient Responsibility"
+            value={insurance_info.patient_responsibility}
+          />
+          <InsuranceItem
+            label="Deductible Applied"
+            value={insurance_info.deductible_applied}
+          />
           <InsuranceItem label="Copay" value={insurance_info.copay} />
         </div>
       </div>
-    </div>
+
+      {/* Generate Appeal Letter button */}
+      <div className="pt-4">
+        <motion.button
+          type="button"
+          aria-label="Generate appeal letter for billing disputes"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="flex items-center justify-center gap-2 rounded-lg bg-trust px-6 py-3 font-semibold text-white shadow-md transition-colors hover:bg-trust-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-trust"
+        >
+          <FileText className="h-5 w-5" aria-hidden />
+          Generate Appeal Letter
+        </motion.button>
+      </div>
+    </motion.div>
   );
 }
 
-function InsuranceItem({ label, value }: { label: string; value: number | null }) {
+function InsuranceItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | null;
+}) {
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
+      <p className="mt-1 font-medium text-slate-900 dark:text-slate-100">
         {formatCurrency(value)}
       </p>
     </div>

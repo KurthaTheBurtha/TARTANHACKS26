@@ -1,9 +1,30 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Loader2, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import { useState, useCallback, useEffect, Suspense, startTransition } from "react";
+import dynamic from "next/dynamic";
+import { motion, AnimatePresence } from "framer-motion";
+import { slideUp } from "@/lib/animations";
+import { FileText, AlertCircle, CheckCircle, Upload, DollarSign, CheckCircle2 } from "lucide-react";
 import type { BillData } from "@/lib/types";
-import { BillResults } from "@/components/bill-results";
+import { DEMO_BILLS } from "@/lib/demo-data";
+import { showError, showLoading } from "@/lib/toast-utils";
+import toast from "react-hot-toast";
+import ProgressChecklist from "@/components/progress-checklist";
+import BillSkeleton from "@/components/skeletons/bill-skeleton";
+
+const BillResults = dynamic(() => import("@/components/bill-results").then((m) => ({ default: m.BillResults })), {
+  loading: () => <BillSkeleton />,
+  ssr: false,
+});
+
+const LOADING_STEPS = [
+  "Uploading document...",
+  "Processing PDF...",
+  "Extracting line items...",
+  "Comparing to Medicare rates...",
+  "Analyzing for errors...",
+  "Calculating savings...",
+];
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -14,19 +35,33 @@ function formatFileSize(bytes: number): string {
 export function BillUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStepsComplete, setLoadingStepsComplete] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BillData | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+  // Simulate progress every 3 seconds while loading
+  useEffect(() => {
+    if (!loading) return;
+    setLoadingStepsComplete(0);
+    const interval = setInterval(() => {
+      setLoadingStepsComplete((prev) => {
+        const next = prev + 1;
+        if (next >= LOADING_STEPS.length) clearInterval(interval);
+        return Math.min(next, LOADING_STEPS.length);
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const validateFile = useCallback((f: File): string | null => {
+    const maxBytes = 10 * 1024 * 1024; // 10MB
     const isPdf =
       f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf");
     if (!isPdf) {
       return `${f.name} is not a PDF. Please select a .pdf file.`;
     }
-    if (f.size > MAX_FILE_SIZE_BYTES) {
+    if (f.size > maxBytes) {
       return `${f.name} is too large (${formatFileSize(f.size)}). Maximum size is 10MB.`;
     }
     return null;
@@ -44,6 +79,7 @@ export function BillUpload() {
       if (validationError) {
         setError(validationError);
         setFile(null);
+        showError(validationError);
         return;
       }
       setFile(selectedFile);
@@ -91,6 +127,7 @@ export function BillUpload() {
     setLoading(true);
     setError(null);
     setResult(null);
+    const loadingId = showLoading("Analyzing your bill...");
 
     try {
       const formData = new FormData();
@@ -107,9 +144,14 @@ export function BillUpload() {
         throw new Error(data.error ?? "Failed to analyze bill");
       }
 
-      setResult(data as BillData);
+      startTransition(() => {
+        setResult(data as BillData);
+        toast.success("Bill analyzed successfully", { id: loadingId });
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to analyze bill");
+      const message = err instanceof Error ? err.message : "Failed to analyze bill";
+      setError(message);
+      toast.error(message, { id: loadingId });
     } finally {
       setLoading(false);
     }
@@ -121,118 +163,212 @@ export function BillUpload() {
     setResult(null);
   }, []);
 
-  return (
-    <div className="space-y-6">
-      {/* Drop zone */}
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={() => document.getElementById("file-input")?.click()}
-        className={`
-          relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12
-          cursor-pointer transition-all duration-200
-          ${
-            error && !file
-              ? "border-red-400 bg-red-50/50 dark:border-red-500 dark:bg-red-950/20"
-              : isDragging
-                ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30"
-                : "border-blue-300 bg-blue-50/50 dark:bg-blue-950/20 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-          }
-        `}
-      >
-        <input
-          id="file-input"
-          type="file"
-          accept="application/pdf"
-          onChange={handleFileInputChange}
-          className="hidden"
-        />
-        <FileText
-          className={`mb-4 h-12 w-12 ${
-            error && !file ? "text-red-500" : "text-blue-500"
-          }`}
-          strokeWidth={1.5}
-        />
-        <p className="text-center text-base font-medium text-gray-700 dark:text-gray-300">
-          Drop PDF here or click to upload
-        </p>
-        <p className="mt-1 text-center text-sm text-gray-500 dark:text-gray-400">
-          Accepted: PDF files up to 10MB
-        </p>
-      </div>
+  const handleLoadDemo = useCallback((demoBill: (typeof DEMO_BILLS)[0]) => {
+    setError(null);
+    setFile(null);
+    toast.success(`Loaded demo: ${demoBill.title}`);
+    startTransition(() => {
+      setResult(demoBill.data);
+    });
+  }, []);
 
-      {/* Selected file info */}
-      {file && (
-        <div className="rounded-lg border-2 border-green-400 bg-green-50/50 px-4 py-3 dark:border-green-600 dark:bg-green-950/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
+  const loadingSteps = LOADING_STEPS.map((label, i) => ({
+    label,
+    complete: i < loadingStepsComplete,
+  }));
+
+  return (
+    <div className="space-y-6" role="region" aria-label="Bill upload and analysis">
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.div
+            key="loading"
+            variants={slideUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="space-y-6"
+            aria-live="polite"
+            aria-busy="true"
+            aria-label="Analyzing your bill"
+          >
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 dark:border-slate-700 dark:bg-slate-800/30 md:p-8">
+              <ProgressChecklist steps={loadingSteps} />
+              <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
+                This may take 10-20 seconds
+              </p>
+            </div>
+            <BillSkeleton />
+          </motion.div>
+        ) : result && !error ? (
+          <motion.div
+            key="results"
+            variants={slideUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="space-y-4"
+          >
+            <div className="flex items-center gap-2 rounded-lg border border-savings/50 bg-savings/10 px-4 py-3">
+              <CheckCircle className="h-5 w-5 shrink-0 text-savings" />
               <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">
-                  {file.name}
+                <p className="font-medium text-savings-dark dark:text-savings">
+                  Bill analyzed successfully
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {formatFileSize(file.size)}
-                </p>
+                {file && (
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400">
+                    <FileText className="h-4 w-4" />
+                    {file.name}
+                  </p>
+                )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Analyze button */}
-      <button
-        onClick={handleAnalyze}
-        disabled={!file || loading}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Analyzing bill with AI... This may take 10-20 seconds
-          </>
+            <Suspense fallback={<BillSkeleton />}>
+              <BillResults billData={result} />
+            </Suspense>
+
+            <motion.button
+              type="button"
+              onClick={handleReset}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              aria-label="Upload another medical bill"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trust focus-visible:ring-offset-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+            >
+              Upload Another Bill
+            </motion.button>
+          </motion.div>
         ) : (
-          "Analyze Bill"
+          <motion.div
+            key="upload"
+            variants={slideUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="space-y-6"
+          >
+            {/* Drop zone - button for keyboard focus, label association for file input */}
+            <div
+              role="button"
+              tabIndex={0}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById("file-input")?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  document.getElementById("file-input")?.click();
+                }
+              }}
+              aria-label="Upload medical bill PDF. Drop file here or press Enter to select. Accepted: PDF files up to 10MB."
+              className={`
+                relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-gradient-to-br from-slate-50 to-trust/5 p-8 transition-all duration-200
+                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trust focus-visible:ring-offset-2
+                md:p-12
+                ${
+                  error && !file
+                    ? "border-danger bg-danger/5"
+                    : isDragging
+                      ? "border-trust-dark scale-[1.02] bg-trust/5"
+                      : "border-trust hover:border-trust-dark hover:scale-[1.02] hover:bg-trust/5"
+                }
+              `}
+            >
+              <input
+                id="file-input"
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileInputChange}
+                tabIndex={-1}
+                className="sr-only"
+                aria-label="Select PDF file"
+              />
+              <Upload
+                className={`mb-4 h-16 w-16 ${
+                  error && !file ? "text-danger" : "text-trust"
+                }`}
+                strokeWidth={1.5}
+              />
+              <p className="text-center text-xl font-semibold text-slate-800">
+                Drop PDF here or click to upload
+              </p>
+              <p className="mt-1 text-center text-sm text-slate-600">
+                Upload your medical bill for analysis
+              </p>
+              <p className="mt-1 text-center text-xs text-slate-500">
+                Accepted: PDF, up to 10MB
+              </p>
+            </div>
+
+            {/* Selected file info */}
+            {file && (
+              <div className="rounded-2xl border-2 border-savings bg-savings/5 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="h-5 w-5 shrink-0 text-savings" />
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                      {file.name}
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      {formatFileSize(file.size)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Demo bills - quick load for presentations */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mr-2 self-center text-sm text-slate-500">
+                Quick demo:
+              </span>
+              {DEMO_BILLS.map((demo) => (
+                <motion.button
+                  key={demo.id}
+                  type="button"
+                  onClick={() => handleLoadDemo(demo)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trust focus-visible:ring-offset-2"
+                >
+                  {demo.title} (${demo.savings.toLocaleString()} saved)
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Analyze button */}
+            <motion.button
+              type="button"
+              onClick={handleAnalyze}
+              disabled={!file}
+              aria-label={file ? `Analyze medical bill: ${file.name}` : "Select a PDF file to analyze"}
+              whileHover={{ scale: file ? 1.02 : 1 }}
+              whileTap={{ scale: file ? 0.98 : 1 }}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-trust px-8 py-4 text-base font-semibold text-white shadow-lg transition-colors hover:bg-trust-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-trust disabled:cursor-not-allowed disabled:opacity-50 md:text-lg"
+            >
+              <DollarSign className="h-5 w-5" aria-hidden />
+              Analyze Bill
+            </motion.button>
+          </motion.div>
         )}
-      </button>
+      </AnimatePresence>
 
       {/* Error message */}
       {error && (
-        <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/50 dark:bg-red-950/30">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
-          <p className="text-sm font-medium text-red-800 dark:text-red-200">
+        <div
+          role="alert"
+          aria-live="polite"
+          className="flex items-start gap-3 rounded-lg border border-danger/50 bg-danger/10 px-4 py-3"
+        >
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-danger" aria-hidden />
+          <p className="text-sm font-medium text-danger-dark dark:text-danger">
             {error}
           </p>
-        </div>
-      )}
-
-      {/* Success result */}
-      {result && !error && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 dark:border-green-900/50 dark:bg-green-950/30">
-            <CheckCircle className="h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
-            <div>
-              <p className="font-medium text-green-800 dark:text-green-200">
-                Bill analyzed successfully
-              </p>
-              {file && (
-                <p className="mt-0.5 flex items-center gap-1.5 text-sm text-green-700 dark:text-green-300">
-                  <FileText className="h-4 w-4" />
-                  {file.name}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <BillResults billData={result} />
-
-          <button
-            onClick={handleReset}
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-          >
-            Upload Another Bill
-          </button>
         </div>
       )}
     </div>

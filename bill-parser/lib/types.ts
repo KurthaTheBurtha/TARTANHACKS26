@@ -5,6 +5,12 @@ export interface LineItem {
   unit_price: number;
   total: number;
   date: string | null;
+  /** Demo/AI: fair price for comparison */
+  fair_price?: number | null;
+  /** Demo/AI: savings when overcharged */
+  savings?: number | null;
+  /** Demo/AI: whether this line has an error */
+  has_error?: boolean;
 }
 
 export interface InsuranceInfo {
@@ -22,4 +28,8 @@ export interface BillData {
   total_charges: number | null;
   line_items: LineItem[];
   insurance_info: InsuranceInfo;
+  /** Demo/AI: total potential savings */
+  total_savings?: number;
+  /** Demo/AI: number of errors found */
+  errors_found?: number;
 }
