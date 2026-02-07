@@ -1,0 +1,230 @@
+{
+  "providers": [
+    {
+      "id": "mock-0001-0001-0001-000000000001",
+      "place_id": "ChIJMockUPMC001",
+      "name": "UPMC Presbyterian Hospital",
+      "types": ["hospital", "health"],
+      "specialties": ["emergency", "surgery", "cardiology"],
+      "address": {
+        "line1": "200 Lothrop St",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip": "15213"
+      },
+      "geo": { "lat": 40.4416, "lng": -79.9569 },
+      "phone": "+1-412-647-2345",
+      "website": "https://www.upmc.com/presbyterian",
+      "network_status": {
+        "in_network": true,
+        "network_name": "UPMC Health Plan",
+        "confidence": 0.95,
+        "source": "seed"
+      },
+      "distance_miles": 1.2
+    },
+    {
+      "id": "mock-0001-0001-0001-000000000002",
+      "place_id": "ChIJMockAHN001",
+      "name": "Allegheny General Hospital",
+      "types": ["hospital", "health"],
+      "specialties": ["emergency", "cardiology", "neurology"],
+      "address": {
+        "line1": "320 E North Ave",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip": "15212"
+      },
+      "geo": { "lat": 40.4548, "lng": -79.9943 },
+      "phone": "+1-412-359-3131",
+      "website": "https://www.ahn.org/agh",
+      "network_status": {
+        "in_network": true,
+        "network_name": "Allegheny Health Network",
+        "confidence": 0.85,
+        "source": "seed"
+      },
+      "distance_miles": 1.8
+    },
+    {
+      "id": "mock-0001-0001-0001-000000000003",
+      "place_id": "ChIJMockUrgent001",
+      "name": "MedExpress Urgent Care - Oakland",
+      "types": ["doctor", "health"],
+      "specialties": ["urgent_care", "primary_care"],
+      "address": {
+        "line1": "3708 Forbes Ave",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip": "15213"
+      },
+      "geo": { "lat": 40.4383, "lng": -79.9561 },
+      "phone": "+1-412-621-7777",
+      "website": "https://www.medexpress.com",
+      "network_status": {
+        "in_network": true,
+        "network_name": "MedExpress Urgent Care",
+        "confidence": 0.6,
+        "source": "heuristic"
+      },
+      "distance_miles": 0.8
+    },
+    {
+      "id": "mock-0001-0001-0001-000000000004",
+      "place_id": "ChIJMockCardio001",
+      "name": "UPMC Heart & Vascular Institute",
+      "types": ["doctor", "hospital"],
+      "specialties": ["cardiology", "cardiovascular_surgery"],
+      "address": {
+        "line1": "200 Lothrop St",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip": "15213"
+      },
+      "geo": { "lat": 40.4418, "lng": -79.9565 },
+      "phone": "+1-412-647-2345",
+      "website": "https://www.upmc.com/heart",
+      "network_status": {
+        "in_network": true,
+        "network_name": "UPMC Health Plan",
+        "confidence": 0.9,
+        "source": "seed"
+      },
+      "distance_miles": 1.3
+    },
+    {
+      "id": "mock-0001-0001-0001-000000000005",
+      "place_id": "ChIJMockPrimary001",
+      "name": "Shadyside Family Medicine",
+      "types": ["doctor", "health"],
+      "specialties": ["primary_care", "family_medicine"],
+      "address": {
+        "line1": "5231 Centre Ave",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip": "15232"
+      },
+      "geo": { "lat": 40.4556, "lng": -79.9387 },
+      "phone": "+1-412-621-3400",
+      "network_status": {
+        "in_network": false,
+        "confidence": 0.3,
+        "source": "unknown"
+      },
+      "distance_miles": 2.5
+    },
+    {
+      "id": "mock-0001-0001-0001-000000000006",
+      "place_id": "ChIJMockOrtho001",
+      "name": "AHN Orthopedic Institute",
+      "types": ["doctor"],
+      "specialties": ["orthopedics", "joint_replacement"],
+      "address": {
+        "line1": "1307 Federal St",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip": "15212"
+      },
+      "geo": { "lat": 40.4558, "lng": -80.0085 },
+      "phone": "+1-412-359-4700",
+      "website": "https://www.ahn.org/ortho",
+      "network_status": {
+        "in_network": true,
+        "network_name": "Allegheny Health Network",
+        "confidence": 0.85,
+        "source": "seed"
+      },
+      "distance_miles": 2.1
+    },
+    {
+      "id": "mock-0001-0001-0001-000000000007",
+      "place_id": "ChIJMockImaging001",
+      "name": "UPMC Imaging Services - Monroeville",
+      "types": ["health"],
+      "specialties": ["radiology", "imaging", "mri"],
+      "address": {
+        "line1": "2580 Mosside Blvd",
+        "city": "Monroeville",
+        "state": "PA",
+        "zip": "15146"
+      },
+      "geo": { "lat": 40.4287, "lng": -79.7612 },
+      "phone": "+1-412-864-2100",
+      "website": "https://www.upmc.com/imaging",
+      "network_status": {
+        "in_network": true,
+        "network_name": "UPMC Health Plan",
+        "confidence": 0.9,
+        "source": "seed"
+      },
+      "distance_miles": 8.5
+    },
+    {
+      "id": "mock-0001-0001-0001-000000000008",
+      "place_id": "ChIJMockPsych001",
+      "name": "UPMC Western Psychiatric Hospital",
+      "types": ["hospital", "health"],
+      "specialties": ["psychiatry", "behavioral_health"],
+      "address": {
+        "line1": "3811 OHara St",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip": "15213"
+      },
+      "geo": { "lat": 40.4445, "lng": -79.9601 },
+      "phone": "+1-412-624-2100",
+      "website": "https://www.upmc.com/westernpsych",
+      "network_status": {
+        "in_network": true,
+        "network_name": "UPMC Health Plan",
+        "confidence": 0.95,
+        "source": "seed"
+      },
+      "distance_miles": 1.5
+    },
+    {
+      "id": "mock-0001-0001-0001-000000000009",
+      "place_id": "ChIJMockDerm001",
+      "name": "Allegheny Dermatology Associates",
+      "types": ["doctor"],
+      "specialties": ["dermatology"],
+      "address": {
+        "line1": "9104 Babcock Blvd",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip": "15237"
+      },
+      "geo": { "lat": 40.5456, "lng": -80.0123 },
+      "phone": "+1-412-367-8100",
+      "network_status": {
+        "in_network": true,
+        "network_name": "Allegheny Health Network",
+        "confidence": 0.8,
+        "source": "heuristic"
+      },
+      "distance_miles": 7.8
+    },
+    {
+      "id": "mock-0001-0001-0001-000000000010",
+      "place_id": "ChIJMockUrgent002",
+      "name": "ConvenientCare Urgent Care - Squirrel Hill",
+      "types": ["doctor", "health"],
+      "specialties": ["urgent_care", "primary_care"],
+      "address": {
+        "line1": "5850 Forbes Ave",
+        "city": "Pittsburgh",
+        "state": "PA",
+        "zip": "15217"
+      },
+      "geo": { "lat": 40.4312, "lng": -79.9201 },
+      "phone": "+1-412-421-2500",
+      "network_status": {
+        "in_network": true,
+        "network_name": "ConvenientCare",
+        "confidence": 0.6,
+        "source": "heuristic"
+      },
+      "distance_miles": 3.2
+    }
+  ]
+}
