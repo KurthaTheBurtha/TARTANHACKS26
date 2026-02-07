@@ -1,0 +1,109 @@
+{
+  "plans": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "payer": "BCBSTX",
+      "plan_name": "Blue Choice PPO Demo",
+      "network": "PPO",
+      "state": "PA"
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "payer": "Aetna",
+      "plan_name": "Open Choice PPO Demo",
+      "network": "PPO",
+      "state": "PA"
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "payer": "UPMC",
+      "plan_name": "UPMC PPO Demo",
+      "network": "PPO",
+      "state": "PA"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444444",
+      "payer": "UPMC",
+      "plan_name": "UPMC Advantage Gold HMO",
+      "network": "HMO",
+      "state": "PA"
+    },
+    {
+      "id": "55555555-5555-5555-5555-555555555555",
+      "payer": "UPMC",
+      "plan_name": "UPMC For You (Medicaid)",
+      "network": "Medicaid",
+      "state": "PA"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666666",
+      "payer": "Aetna",
+      "plan_name": "Aetna Choice POS II",
+      "network": "POS",
+      "state": "PA"
+    },
+    {
+      "id": "77777777-7777-7777-7777-777777777777",
+      "payer": "Highmark",
+      "plan_name": "Highmark Blue Cross Blue Shield PPO",
+      "network": "PPO",
+      "state": "PA"
+    },
+    {
+      "id": "88888888-8888-8888-8888-888888888888",
+      "payer": "Highmark",
+      "plan_name": "Highmark Freedom Blue (Medicare)",
+      "network": "Medicare",
+      "state": "PA"
+    },
+    {
+      "id": "99999999-9999-9999-9999-999999999999",
+      "payer": "Cigna",
+      "plan_name": "Cigna Open Access Plus",
+      "network": "PPO",
+      "state": "PA"
+    },
+    {
+      "id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      "payer": "UnitedHealthcare",
+      "plan_name": "UHC Choice Plus PPO",
+      "network": "PPO",
+      "state": "PA"
+    },
+    {
+      "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "payer": "UnitedHealthcare",
+      "plan_name": "UHC Dual Complete (Medicare/Medicaid)",
+      "network": "Medicare",
+      "state": "PA"
+    },
+    {
+      "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+      "payer": "BCBSTX",
+      "plan_name": "Blue Essentials HMO",
+      "network": "HMO",
+      "state": "TX"
+    },
+    {
+      "id": "dddddddd-dddd-dddd-dddd-dddddddddddd",
+      "payer": "Aetna",
+      "plan_name": "Aetna Medicare Advantage",
+      "network": "Medicare",
+      "state": "PA"
+    },
+    {
+      "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+      "payer": "Cigna",
+      "plan_name": "Cigna LocalPlus",
+      "network": "EPO",
+      "state": "PA"
+    },
+    {
+      "id": "ffffffff-ffff-ffff-ffff-ffffffffffff",
+      "payer": "Geisinger",
+      "plan_name": "Geisinger Gold Medicare HMO",
+      "network": "HMO",
+      "state": "PA"
+    }
+  ]
+}
