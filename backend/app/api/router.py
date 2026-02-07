@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import docs, chat, providers, policies, me
+from app.api.v1 import docs, chat, providers, policies, me, caremap
 from app.core.config import settings
 
 api_router = APIRouter()
@@ -32,4 +32,10 @@ api_router.include_router(
     policies.router,
     prefix="/policies",
     tags=["policies"]
+)
+
+api_router.include_router(
+    caremap.router,
+    prefix="/caremap",
+    tags=["caremap"]
 )

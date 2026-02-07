@@ -54,10 +54,10 @@ export default function Footer() {
               )}
               <li>
                 <Link
-                  href="#"
+                  href="/caremap"
                   className="text-slate-300 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
-                  Find Care
+                  CareMap — Bill + Navigation
                 </Link>
               </li>
               <li>
