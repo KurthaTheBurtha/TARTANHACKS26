@@ -1,9 +1,9 @@
 .PHONY: dev test test-quick lint format install clean bootstrap migrate check check-ci smoke demo
 
-# Development (BACKEND_PORT env var, default 8000)
+# Development
 dev:
 	@echo "Starting development server..."
-	@uvicorn app.main:app --reload --host 0.0.0.0 --port $${BACKEND_PORT:-8000}
+	@uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # Testing
 test:

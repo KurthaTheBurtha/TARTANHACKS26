@@ -99,7 +99,6 @@ export default function Home() {
           initial="initial"
           animate="animate"
           transition={{ delay: 0.2 }}
-          className="flex flex-wrap items-center justify-center gap-4"
         >
           <Link
             href="/upload"
@@ -113,12 +112,6 @@ export default function Home() {
               Upload Your Bill
               <ArrowRight className="h-5 w-5" />
             </motion.span>
-          </Link>
-          <Link
-            href="/caremap"
-            className="inline-block rounded-xl border-2 border-slate-300 bg-white px-8 py-4 text-lg font-semibold text-slate-700 shadow-sm transition-colors hover:border-trust hover:bg-slate-50 hover:text-trust focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trust focus-visible:ring-offset-2"
-          >
-            Try full demo (CareMap)
           </Link>
         </motion.div>
 

@@ -51,14 +51,13 @@ uvicorn app.main:app --reload --port 8000
 
 ### CareMap orchestrator (unified bill + benefits + navigation)
 - `POST /v1/caremap/ingest` - Upload bill PDF (+ optional SOB PDF); returns bill breakdown, insurance guidance, and in-network navigation in one response. Works with mock fallbacks when external services are unavailable.
-- `GET /v1/caremap/health` - Returns which components are live vs mock: `bill_parser`, `integrations`, `rag`, `guidance_llm`; and `demo_mode` (if true, ingest returns a deterministic fixture).
+- `GET /v1/caremap/health` - Returns which components are live vs mock: `{ "bill_parser": "live"|"mock", "integrations": "live"|"mock", "rag": "live"|"mock" }`.
 
 **Optional env vars for CareMap:**
 - `BILL_PARSER_URL` - Base URL of Kurt's bill-parser app (e.g. `http://localhost:3000`). If unset, bill breakdown uses mock data.
 - `FUNCTIONS_BASE_URL` - Supabase Edge Functions base (e.g. `http://localhost:54321/functions/v1`) for provider search. If unset, navigation uses mock results.
 - `CAREMAP_TEMP_DIR` - Directory for temporary uploads (default: system temp).
 - `CAREMAP_INGEST_REQUIRE_AUTH` - Set to `false` to allow unauthenticated ingest for demos (default: true).
-- `DEMO_MODE` - Set to `true` to make ingest return a deterministic fixture (stable for demos; no external calls).
 
 **Example request (curl):**
 ```bash

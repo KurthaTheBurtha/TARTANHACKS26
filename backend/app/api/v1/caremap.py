@@ -1,7 +1,5 @@
 """
 CareMap orchestrator: single ingest endpoint (bill + SOB + navigation) with stable contract.
-When DEMO_MODE=true, returns deterministic fixture for stable demos.
-Guidance uses LLM client (Prompt 3) when a key is set; otherwise template-based.
 """
 from __future__ import annotations
 
@@ -21,7 +19,6 @@ from app.schemas.caremap import (
     InsuranceBenefits,
     Guidance,
     Navigation,
-    NavigationResult,
     UserContext,
     NetworkContext,
     IntegrationError,
@@ -42,74 +39,6 @@ DEMO_PLAN_IDS = {
 router = APIRouter()
 
 
-def _demo_fixture_response() -> CaremapIngestResponse:
-    """Deterministic response when DEMO_MODE=true; stable for demos."""
-    return CaremapIngestResponse(
-        bill=BillBreakdown(
-            provider_name="Demo Medical Group",
-            facility_name="Demo Clinic",
-            service_dates="2025-11-03",
-            total_billed=310.0,
-            patient_responsibility=180.0,
-            line_items=[
-                CaremapLineItem(
-                    description="Office visit (level 3)",
-                    cpt_hcpcs="99213",
-                    units=1.0,
-                    amount_billed=310.0,
-                    amount_allowed=180.0,
-                    notes="Deductible may apply.",
-                ),
-            ],
-        ),
-        insurance=InsuranceBenefits(
-            deductible_individual=500.0,
-            oop_max_individual=8500.0,
-            disclaimers=["Demo: verify amounts with your plan documents."],
-        ),
-        guidance=Guidance(
-            summary_plain_english="Your estimated patient responsibility is $180.00. This is a demo response; with a real bill and LLM configured you will see personalized guidance.",
-            next_steps=[
-                "Confirm the provider was in-network on the date of service.",
-                "Check whether your deductible has been met.",
-                "If amounts look wrong, request an itemized bill and compare to your EOB.",
-            ],
-            appeal_tips=[
-                "Keep copies of all bills and EOBs.",
-                "Ask the provider for a detailed itemized bill if you dispute a charge.",
-            ],
-            questions_to_ask_provider=[
-                "Was this service billed with the correct CPT codes?",
-                "Can I get an itemized bill?",
-            ],
-        ),
-        navigation=Navigation(
-            query_used="primary care",
-            results=[
-                NavigationResult(
-                    name="UPMC Presbyterian",
-                    address="200 Lothrop St, Pittsburgh, PA 15213",
-                    distance_miles=2.3,
-                    lat=40.4414,
-                    lng=-79.9600,
-                    network_status="in_network",
-                    source="mock",
-                ),
-                NavigationResult(
-                    name="AHN Wexford Health + Wellness Pavilion",
-                    address="12311 Perry Hwy, Wexford, PA 15090",
-                    distance_miles=5.1,
-                    lat=40.6301,
-                    lng=-80.0576,
-                    network_status="in_network",
-                    source="mock",
-                ),
-            ],
-        ),
-        errors=[],
-    )
-
-
 def _persist_upload(upload: UploadFile, base_dir: str) -> Optional[str]:
     """Save upload to base_dir; return path or None. No PII in paths."""
     try:
@@ -128,7 +57,7 @@ def _persist_upload(upload: UploadFile, base_dir: str) -> Optional[str]:
 
 
 def _build_guidance_from_bill(bill: BillBreakdown, insurance: InsuranceBenefits) -> Guidance:
-    """Build plain-English guidance from bill and insurance (template fallback)."""
+    """Build plain-English guidance from bill and insurance."""
     summary = "Review your line items and patient responsibility below."
     if bill.patient_responsibility is not None:
         summary = f"Your estimated patient responsibility is ${bill.patient_responsibility:.2f}. " + summary
@@ -153,82 +82,6 @@ def _build_guidance_from_bill(bill: BillBreakdown, insurance: InsuranceBenefits)
             "Do you have a financial assistance program?",
         ],
     )
-
-
-# Prompt 3: plain-English guidance from bill + insurance (for LLM client)
-GUIDANCE_SYSTEM = (
-    "You are a helpful health insurance assistant. Given a bill breakdown and insurance context, "
-    "provide a short plain-English summary (2-4 sentences) and 3-5 concrete next steps. "
-    "Be clear and actionable. Do not invent amounts; use only the numbers provided."
-)
-
-
-async def _build_guidance_with_llm(bill: BillBreakdown, insurance: InsuranceBenefits) -> tuple[Guidance, Optional[IntegrationError]]:
-    """
-    Produce plain-English guidance using the LLM client (Prompt 3).
-    Returns (Guidance, None) on success, or (template Guidance, IntegrationError) on failure/mock.
-    """
-    try:
-        from app.llm import generate_text
-    except ImportError:
-        return _build_guidance_from_bill(bill, insurance), IntegrationError(
-            component="rag",
-            message="LLM not available; using template guidance.",
-            recoverable=True,
-        )
-    bill_summary = f"Provider: {bill.provider_name or 'Unknown'}. Total billed: {bill.total_billed}. Patient responsibility: {bill.patient_responsibility}. Line items: {len(bill.line_items)}."
-    ins_summary = "Insurance: " + ("; ".join(insurance.disclaimers) if insurance.disclaimers else "No benefits data.")
-    prompt = f"""Bill summary: {bill_summary}
-{ins_summary}
-
-Provide:
-1. A short plain-English summary (2-4 sentences) for the patient about what they owe and what to do next.
-2. Then list 3-5 numbered next steps (one per line, start each with a number).
-Output only the summary and numbered list, no other preamble."""
-
-    try:
-        text = await generate_text(
-            prompt=prompt,
-            system=GUIDANCE_SYSTEM,
-            provider=None,
-            model=None,
-            temperature=0.2,
-        )
-        if not text or (text.strip().startswith("[LLM mock]") or "mock" in text[:80].lower()):
-            return _build_guidance_from_bill(bill, insurance), IntegrationError(
-                component="rag",
-                message="LLM returned mock or empty; using template guidance.",
-                recoverable=True,
-            )
-        # Use full text as summary; extract lines that look like next steps (numbered) into next_steps
-        lines = [s.strip() for s in text.split("\n") if s.strip()]
-        summary_parts = []
-        next_steps = []
-        for line in lines:
-            if line and line[0:1].isdigit() and (". " in line[:4] or ") " in line[:4]):
-                next_steps.append(line.lstrip("0123456789.) ").strip() or line)
-            else:
-                summary_parts.append(line)
-        summary_plain_english = " ".join(summary_parts).strip() or text[:500].strip()
-        if not next_steps:
-            next_steps = [
-                "Confirm the provider was in-network on the date of service.",
-                "Check whether your deductible has been met.",
-                "If amounts look wrong, request an itemized bill and compare to your EOB.",
-            ]
-        return Guidance(
-            summary_plain_english=summary_plain_english,
-            next_steps=next_steps[:5],
-            appeal_tips=_build_guidance_from_bill(bill, insurance).appeal_tips,
-            questions_to_ask_provider=_build_guidance_from_bill(bill, insurance).questions_to_ask_provider,
-        ), None
-    except Exception as e:
-        safe_log_error("LLM guidance failed", e)
-        return _build_guidance_from_bill(bill, insurance), IntegrationError(
-            component="rag",
-            message="Guidance generation failed; using template.",
-            recoverable=True,
-        )
 
 
 @router.post("/ingest", response_model=CaremapIngestResponse)
@@ -266,10 +119,6 @@ async def caremap_ingest(
 
         if sob_pdf and sob_pdf.filename:
             sob_path = _persist_upload(sob_pdf, caremap_dir)
-
-        # Demo fixture mode: return deterministic response (stable for demos)
-        if getattr(settings, "demo_mode", False):
-            return _demo_fixture_response()
 
         user_ctx = UserContext()
         if user_context:
@@ -319,10 +168,7 @@ async def caremap_ingest(
         if err_nav:
             errors.append(err_nav)
 
-        # Plain-English guidance: LLM (Prompt 3) when key set, else template
-        guidance, err_guidance = await _build_guidance_with_llm(bill, insurance)
-        if err_guidance:
-            errors.append(err_guidance)
+        guidance = _build_guidance_from_bill(bill, insurance)
 
         return CaremapIngestResponse(
             bill=bill,
@@ -358,17 +204,11 @@ async def caremap_ingest(
 @router.get("/health", response_model=CaremapHealthResponse)
 async def caremap_health():
     """
-    Returns which components are live vs mock: bill_parser, integrations, rag, guidance_llm.
-    demo_mode=true means ingest returns deterministic fixture. No auth required.
+    Returns which components are live vs mock: bill_parser, integrations, rag.
+    No auth required.
     """
-    has_llm = (
-        (settings.openai_api_key and settings.openai_api_key.strip())
-        or (settings.gemini_api_key and settings.gemini_api_key.strip())
-    )
     return CaremapHealthResponse(
         bill_parser="live" if bill_parser_adapter.is_live() else "mock",
         integrations="live" if network_adapter.is_live() else "mock",
         rag="live" if benefits_adapter.is_live() else "mock",
-        guidance_llm="live" if has_llm else "mock",
-        demo_mode=getattr(settings, "demo_mode", False),
     )

@@ -10,17 +10,16 @@ echo "🚀 Bootstrapping development environment..."
 if [ ! -f .env ]; then
     echo "⚠️  .env file not found. Creating from template..."
     cat > .env << EOF
-# Supabase Configuration (use SUPABASE_ANON_KEY or SUPABASE_KEY)
+# Supabase Configuration
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-SUPABASE_JWT_SECRET=
+SUPABASE_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_JWT_SECRET=your-jwt-secret
 
 # Database
 DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
 
 # Application
-BACKEND_PORT=8000
 ENVIRONMENT=development
 LOG_LEVEL=INFO
 API_V1_PREFIX=/v1

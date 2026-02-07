@@ -1,12 +1,10 @@
 """
-Document analyzer service; uses shared LLM client for summary when configured.
-Falls back to deterministic mock extraction when no LLM key is set.
+Document analyzer service with OpenAI Vision stub.
+Falls back to deterministic mock extraction if OpenAI key is missing.
 """
-import io
 from typing import Dict, Any, Optional
 from app.core.config import settings
 from app.core.logging import safe_log_info, safe_log_error
-from app.llm import summarize_document
 
 
 class ExtractionResult:
@@ -30,52 +28,24 @@ class ExtractionResult:
         self.raw_extraction = raw_extraction or {}
 
 
-def _extract_text_from_pdf(file_bytes: bytes) -> Optional[str]:
-    """Extract raw text from PDF for summarization. Returns None if not PDF or extraction fails."""
-    try:
-        import pdfplumber
-        with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-            parts = []
-            for page in pdf.pages[:10]:
-                t = page.extract_text()
-                if t:
-                    parts.append(t)
-            return "\n".join(parts).strip() if parts else None
-    except Exception:
-        return None
-
-
-async def analyze_document(file_bytes: bytes, mime_type: str) -> ExtractionResult:
+def analyze_document(file_bytes: bytes, mime_type: str) -> ExtractionResult:
     """
     Analyze a document and extract structured data.
-    Uses shared LLM client (OpenAI/Gemini) for plain-English summary when a key is set;
-    otherwise returns mock data. Structured extraction (line items, etc.) remains mock until Vision/OCR is added.
+    Uses OpenAI Vision if key is available, otherwise returns mock data.
     """
-    mock = _get_mock_extraction()
-    has_llm = (
-        (settings.openai_api_key and settings.openai_api_key.strip())
-        or (settings.gemini_api_key and settings.gemini_api_key.strip())
-    )
-    if has_llm and mime_type and "pdf" in mime_type.lower():
-        text = _extract_text_from_pdf(file_bytes)
-        if text:
-            try:
-                summary = await summarize_document(text)
-                if summary and not summary.strip().startswith("[LLM mock]"):
-                    return ExtractionResult(
-                        provider=mock.provider,
-                        service_date=mock.service_date,
-                        patient_responsibility=mock.patient_responsibility,
-                        line_items=mock.line_items,
-                        plain_english_summary=summary,
-                        next_steps=mock.next_steps,
-                        raw_extraction=mock.raw_extraction,
-                    )
-            except Exception as e:
-                safe_log_error("LLM summarization failed, using mock summary", e)
+    # Check if OpenAI is configured
+    if settings.openai_api_key:
+        try:
+            # TODO: Implement OpenAI Vision API call
+            # For now, return mock even if key exists (stub implementation)
+            safe_log_info("OpenAI key present but using stub implementation")
+            return _get_mock_extraction()
+        except Exception as e:
+            safe_log_error("OpenAI analysis failed, falling back to mock", e)
+            return _get_mock_extraction()
     else:
-        safe_log_info("No LLM key or no PDF text, using mock extraction")
-    return mock
+        safe_log_info("OpenAI key not configured, using mock extraction")
+        return _get_mock_extraction()
 
 
 def _get_mock_extraction() -> ExtractionResult:

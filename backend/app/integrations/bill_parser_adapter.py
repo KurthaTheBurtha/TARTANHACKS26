@@ -4,7 +4,6 @@ No PII in logs (do not log member_id, names, addresses from documents).
 """
 from __future__ import annotations
 
-import json
 import os
 import aiohttp
 from typing import Tuple, Optional
@@ -77,19 +76,9 @@ async def parse_bill(bill_pdf_path: str) -> Tuple[BillBreakdown, Optional[Integr
                 if resp.status != 200:
                     body = await resp.text()
                     safe_log_info("Bill parser non-200", status=resp.status, body_preview=(body[:200] if body else ""))
-                    # Surface the parser's error message when present (e.g. "No text could be extracted", "File too large")
-                    try:
-                        parsed = json.loads(body)
-                        detail = parsed.get("error") if isinstance(parsed, dict) else None
-                        if detail and isinstance(detail, str) and len(detail) < 500:
-                            msg = detail
-                        else:
-                            msg = f"Bill parser returned {resp.status}."
-                    except Exception:
-                        msg = f"Bill parser returned {resp.status}."
                     return _mock_bill_breakdown(), IntegrationError(
                         component="bill_parser",
-                        message=msg,
+                        message=f"Bill parser returned {resp.status}.",
                         recoverable=True,
                     )
                 out = await resp.json()

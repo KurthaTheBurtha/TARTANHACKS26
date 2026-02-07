@@ -234,9 +234,9 @@ async def analyze_document_endpoint(
                 detail="Failed to download document"
             )
         
-        # Analyze document (async; may use LLM for summary)
+        # Analyze document
         mime_type = doc_record.get("mime_type", "application/pdf")
-        extraction_result = await analyze_document(file_bytes, mime_type)
+        extraction_result = analyze_document(file_bytes, mime_type)
         
         # Normalize extraction
         normalized = normalize_extraction(extraction_result)

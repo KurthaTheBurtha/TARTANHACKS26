@@ -1,12 +1,10 @@
 """
 RAG response generator with LLM or stub fallback.
-Uses shared LLM client (OpenAI/Gemini) when configured.
 """
-from typing import List, AsyncIterator, Optional
+from typing import List, AsyncIterator
 from app.services.rag.retriever import ChunkResult
 from app.core.config import settings
 from app.core.logging import safe_log_info, safe_log_error
-from app.llm import LLMProvider, generate_text, generate_text_stream
 
 
 class GeneratedResponse:
@@ -24,42 +22,40 @@ class GeneratedResponse:
         self.disclaimer = disclaimer
 
 
-async def generate_response(
+def generate_response(
     query: str,
-    retrieved_chunks: List[ChunkResult],
-    provider: Optional[LLMProvider] = None,
+    retrieved_chunks: List[ChunkResult]
 ) -> GeneratedResponse:
     """
     Generate assistant response from query and retrieved chunks.
-    Uses shared LLM client (OpenAI or Gemini per LLM_PROVIDER) if key is set, otherwise stub.
+    Uses LLM if available, otherwise returns stub response.
     """
-    has_llm = (
-        (settings.openai_api_key and settings.openai_api_key.strip())
-        or (settings.gemini_api_key and settings.gemini_api_key.strip())
-    )
-    if has_llm and retrieved_chunks:
+    if settings.openai_api_key and retrieved_chunks:
         try:
-            return await _generate_with_llm(query, retrieved_chunks, provider=provider)
+            return _generate_with_llm(query, retrieved_chunks)
         except Exception as e:
             safe_log_error("LLM generation failed, using stub", e)
             return _generate_stub(query, retrieved_chunks)
     else:
-        safe_log_info("No LLM key configured or no chunks, using stub response")
+        safe_log_info("OpenAI key not configured or no chunks, using stub response")
         return _generate_stub(query, retrieved_chunks)
 
 
-async def _generate_with_llm(
-    query: str,
-    chunks: List[ChunkResult],
-    provider: Optional[LLMProvider] = None,
-) -> GeneratedResponse:
-    """Generate response using shared LLM client (OpenAI or Gemini)."""
-    context = "\n\n".join([
-        f"[Chunk {i+1}]: {chunk.text[:500]}"
-        for i, chunk in enumerate(chunks[:3])
-    ])
-    system = "You are a helpful health insurance assistant. Always cite your sources."
-    prompt = f"""User question: {query}
+def _generate_with_llm(query: str, chunks: List[ChunkResult]) -> GeneratedResponse:
+    """Generate response using OpenAI LLM."""
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=settings.openai_api_key)
+        
+        # Build context from chunks
+        context = "\n\n".join([
+            f"[Chunk {i+1}]: {chunk.text[:500]}"
+            for i, chunk in enumerate(chunks[:3])  # Use top 3 chunks
+        ])
+        
+        prompt = f"""You are a helpful assistant that explains health insurance benefits based on policy documents.
+
+User question: {query}
 
 Relevant policy excerpts:
 {context}
@@ -67,27 +63,41 @@ Relevant policy excerpts:
 Provide a clear, concise answer based on the policy excerpts above. If the excerpts don't contain relevant information, say so. Always cite which excerpt you're referencing.
 
 Keep your response under 200 words."""
-    text = await generate_text(
-        prompt=prompt,
-        system=system,
-        provider=provider,
-        model=None,
-        temperature=0.3,
-    )
-    citations = [
-        {
-            "doc_id": chunk.doc_id,
-            "chunk_id": chunk.chunk_id,
-            "label": chunk.metadata.get("label", f"Policy excerpt {i+1}"),
-        }
-        for i, chunk in enumerate(chunks[:3])
-    ]
-    return GeneratedResponse(
-        text=text,
-        citations=citations,
-        confidence=0.75,
-        disclaimer="I'm not a lawyer or your insurer; verify with your plan documents or insurer.",
-    )
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # Use cheaper model for MVP
+            messages=[
+                {"role": "system", "content": "You are a helpful health insurance assistant. Always cite your sources."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=300,
+            temperature=0.3
+        )
+        
+        text = response.choices[0].message.content
+        
+        # Build citations
+        citations = [
+            {
+                "doc_id": chunk.doc_id,
+                "chunk_id": chunk.chunk_id,
+                "label": chunk.metadata.get("label", f"Policy excerpt {i+1}")
+            }
+            for i, chunk in enumerate(chunks[:3])
+        ]
+        
+        return GeneratedResponse(
+            text=text,
+            citations=citations,
+            confidence=0.75,  # LLM responses get higher confidence
+            disclaimer="I'm not a lawyer or your insurer; verify with your plan documents or insurer."
+        )
+    except ImportError:
+        safe_log_error("OpenAI library not installed")
+        return _generate_stub(query, chunks)
+    except Exception as e:
+        safe_log_error("LLM API call failed", e)
+        return _generate_stub(query, chunks)
 
 
 def _generate_stub(query: str, chunks: List[ChunkResult]) -> GeneratedResponse:
@@ -117,19 +127,21 @@ def _generate_stub(query: str, chunks: List[ChunkResult]) -> GeneratedResponse:
     )
 
 
-async def _generate_with_llm_stream(
-    query: str,
-    chunks: List[ChunkResult],
-    provider: Optional[LLMProvider] = None,
-) -> AsyncIterator[str]:
-    """Generate streaming response using shared LLM client (OpenAI or Gemini)."""
+async def _generate_with_llm_stream(query: str, chunks: List[ChunkResult]) -> AsyncIterator[str]:
+    """Generate streaming response using OpenAI LLM."""
     try:
+        from openai import OpenAI
+        client = OpenAI(api_key=settings.openai_api_key)
+        
+        # Build context from chunks
         context = "\n\n".join([
             f"[Chunk {i+1}]: {chunk.text[:500]}"
-            for i, chunk in enumerate(chunks[:3])
+            for i, chunk in enumerate(chunks[:3])  # Use top 3 chunks
         ])
-        system = "You are a helpful health insurance assistant. Always cite your sources."
-        prompt = f"""User question: {query}
+        
+        prompt = f"""You are a helpful assistant that explains health insurance benefits based on policy documents.
+
+User question: {query}
 
 Relevant policy excerpts:
 {context}
@@ -137,16 +149,30 @@ Relevant policy excerpts:
 Provide a clear, concise answer based on the policy excerpts above. If the excerpts don't contain relevant information, say so. Always cite which excerpt you're referencing.
 
 Keep your response under 200 words."""
-        async for token in generate_text_stream(
-            prompt=prompt,
-            system=system,
-            provider=provider,
-            model=None,
+
+        stream = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful health insurance assistant. Always cite your sources."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=300,
             temperature=0.3,
-        ):
-            yield token
+            stream=True
+        )
+        
+        for chunk in stream:
+            if chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+    except ImportError:
+        safe_log_error("OpenAI library not installed")
+        # Fallback: yield stub text in chunks
+        stub = _generate_stub(query, chunks)
+        for word in stub.text.split():
+            yield word + " "
     except Exception as e:
         safe_log_error("LLM streaming failed", e)
+        # Fallback: yield stub text in chunks
         stub = _generate_stub(query, chunks)
         for word in stub.text.split():
             yield word + " "

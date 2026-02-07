@@ -124,8 +124,3 @@ class CaremapHealthResponse(BaseModel):
     bill_parser: Literal["live", "mock"] = "mock"
     integrations: Literal["live", "mock"] = "mock"
     rag: Literal["live", "mock"] = "mock"
-    guidance_llm: Literal["live", "mock"] = Field(
-        default="mock",
-        description="Whether plain-English guidance uses LLM (openai/gemini); mock if no key or DEMO_MODE.",
-    )
-    demo_mode: bool = Field(default=False, description="If true, ingest returns deterministic fixture.")
