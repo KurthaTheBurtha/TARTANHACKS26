@@ -37,7 +37,13 @@ class Settings(BaseSettings):
     # Test auth override
     test_bypass_auth: bool = False
     auth_mode: str = "jwt"  # "jwt" or "test"
-    
+
+    # CareMap orchestrator (optional)
+    bill_parser_url: Optional[str] = None  # e.g. http://localhost:3000/api (Next.js parse-bill)
+    functions_base_url: Optional[str] = None  # e.g. http://localhost:54321/functions/v1 (Supabase Edge)
+    caremap_temp_dir: Optional[str] = None  # temp dir for uploads; default system temp
+    caremap_ingest_require_auth: bool = True  # set False for demo to allow unauthenticated ingest
+
     @property
     def cors_origins(self) -> List[str]:
         return [origin.strip() for origin in self.allowed_origins.split(",")]

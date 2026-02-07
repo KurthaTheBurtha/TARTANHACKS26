@@ -49,6 +49,53 @@ uvicorn app.main:app --reload --port 8000
 ### Providers
 - `GET /v1/providers/search?query=...` - Search for healthcare providers
 
+### CareMap orchestrator (unified bill + benefits + navigation)
+- `POST /v1/caremap/ingest` - Upload bill PDF (+ optional SOB PDF); returns bill breakdown, insurance guidance, and in-network navigation in one response. Works with mock fallbacks when external services are unavailable.
+- `GET /v1/caremap/health` - Returns which components are live vs mock: `{ "bill_parser": "live"|"mock", "integrations": "live"|"mock", "rag": "live"|"mock" }`.
+
+**Optional env vars for CareMap:**
+- `BILL_PARSER_URL` - Base URL of Kurt's bill-parser app (e.g. `http://localhost:3000`). If unset, bill breakdown uses mock data.
+- `FUNCTIONS_BASE_URL` - Supabase Edge Functions base (e.g. `http://localhost:54321/functions/v1`) for provider search. If unset, navigation uses mock results.
+- `CAREMAP_TEMP_DIR` - Directory for temporary uploads (default: system temp).
+- `CAREMAP_INGEST_REQUIRE_AUTH` - Set to `false` to allow unauthenticated ingest for demos (default: true).
+
+**Example request (curl):**
+```bash
+curl -X POST http://localhost:8000/v1/caremap/ingest \
+  -F "bill_pdf=@/path/to/billing_statement.pdf" \
+  -F "sob_pdf=@/path/to/summary-of-benefits.pdf" \
+  -F 'user_context={"zip_code":"15213","radius_miles":10,"specialty_keywords":["primary care"]}' \
+  -F 'network_context={"insurance_carrier":"upmc"}'
+```
+
+**Example response snippet:**
+```json
+{
+  "bill": {
+    "provider_name": "Example Medical Group",
+    "line_items": [{"description": "Office visit", "cpt_hcpcs": "99213", "amount_billed": 310.0}],
+    "total_billed": 310.0,
+    "patient_responsibility": 180.0
+  },
+  "insurance": { "disclaimers": ["..."] },
+  "guidance": {
+    "summary_plain_english": "Your estimated patient responsibility is $180.00...",
+    "next_steps": ["Confirm the provider was in-network..."]
+  },
+  "navigation": {
+    "query_used": "primary care",
+    "results": [{ "name": "UPMC Presbyterian", "lat": 40.44, "lng": -79.96, "network_status": "in_network" }]
+  },
+  "errors": []
+}
+```
+
+**Component health:**
+```bash
+curl -s http://localhost:8000/v1/caremap/health
+# {"bill_parser":"mock","integrations":"mock","rag":"live"}
+```
+
 ## Authentication
 
 All endpoints (except `/health`) require a Bearer token in the Authorization header:
