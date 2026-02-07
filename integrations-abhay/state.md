@@ -1,5 +1,8 @@
-# CareMap — STATE.md
-Last updated: 2026-02-07
+# CareMap — Integrations state
+
+**→ For current project state (what works, mocked vs live, demo script): see [root STATE.md](../../STATE.md).**
+
+Last updated: 2026-02-07  
 Owners: Abdoul (Backend/AI), Abhay (Integrations), Kurt (Frontend)
 
 ## 0) Mission

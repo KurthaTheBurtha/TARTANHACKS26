@@ -5,12 +5,72 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { slideUp } from "@/lib/animations";
 import { FileText, AlertCircle, CheckCircle, Upload, DollarSign, CheckCircle2 } from "lucide-react";
-import type { BillData } from "@/lib/types";
+import type { BillData, LineItem, InsuranceInfo } from "@/lib/types";
 import { DEMO_BILLS } from "@/lib/demo-data";
 import { showError, showLoading } from "@/lib/toast-utils";
 import toast from "react-hot-toast";
 import ProgressChecklist from "@/components/progress-checklist";
 import BillSkeleton from "@/components/skeletons/bill-skeleton";
+
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_CAREMAP_BACKEND_URL ||
+  "http://localhost:8000";
+
+/** Map backend CareMap ingest response to BillData for the standalone results view */
+function caremapResponseToBillData(res: {
+  bill?: {
+    provider_name?: string | null;
+    facility_name?: string | null;
+    service_dates?: string | null;
+    total_billed?: number | null;
+    patient_responsibility?: number | null;
+    line_items?: Array<{
+      description?: string;
+      cpt_hcpcs?: string | null;
+      units?: number | null;
+      amount_billed?: number | null;
+      amount_allowed?: number | null;
+      notes?: string | null;
+    }>;
+  };
+  insurance?: {
+    deductible_individual?: number | null;
+    patient_responsibility?: number | null;
+  };
+}): BillData {
+  const bill = res.bill ?? {};
+  const lineItems: LineItem[] = (bill.line_items ?? []).map((item) => {
+    const units = item.units ?? 1;
+    const amountBilled = item.amount_billed ?? 0;
+    return {
+      description: item.description ?? "Line item",
+      cpt_code: item.cpt_hcpcs ?? null,
+      quantity: units,
+      unit_price: units > 0 ? amountBilled / units : amountBilled,
+      total: amountBilled,
+      date: bill.service_dates ?? null,
+    };
+  });
+  const insuranceInfo: InsuranceInfo = {
+    insurance_paid:
+      bill.total_billed != null && bill.patient_responsibility != null
+        ? bill.total_billed - bill.patient_responsibility
+        : null,
+    patient_responsibility: bill.patient_responsibility ?? res.insurance?.patient_responsibility ?? null,
+    deductible_applied: res.insurance?.deductible_individual ?? null,
+    copay: null,
+  };
+  return {
+    patient_name: null,
+    date_of_service: bill.service_dates ?? null,
+    provider_name: bill.provider_name ?? null,
+    provider_address: bill.facility_name ?? null,
+    total_charges: bill.total_billed ?? null,
+    line_items: lineItems.length > 0 ? lineItems : [{ description: "No line items", cpt_code: null, quantity: 1, unit_price: 0, total: 0, date: null }],
+    insurance_info: insuranceInfo,
+  };
+}
 
 const BillResults = dynamic(() => import("@/components/bill-results").then((m) => ({ default: m.BillResults })), {
   loading: () => <BillSkeleton />,
@@ -131,9 +191,13 @@ export function BillUpload() {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("bill_pdf", file);
+      formData.append(
+        "user_context",
+        JSON.stringify({ radius_miles: 10, specialty_keywords: ["primary care"] })
+      );
 
-      const response = await fetch("/api/parse-bill", {
+      const response = await fetch(`${BACKEND_URL}/v1/caremap/ingest`, {
         method: "POST",
         body: formData,
       });
@@ -141,11 +205,16 @@ export function BillUpload() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Failed to analyze bill");
+        const msg =
+          (data.detail && (typeof data.detail === "string" ? data.detail : data.detail?.msg ?? JSON.stringify(data.detail)))
+          ?? data.error
+          ?? "Failed to analyze bill";
+        throw new Error(msg);
       }
 
+      const billData = caremapResponseToBillData(data);
       startTransition(() => {
-        setResult(data as BillData);
+        setResult(billData);
         toast.success("Bill analyzed successfully", { id: loadingId });
       });
     } catch (err) {

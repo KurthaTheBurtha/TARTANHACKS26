@@ -2,30 +2,32 @@
  * CareMap Mobile — Supabase Client
  * =================================
  *
- * Initializes the Supabase client for auth and database access.
- *
- * Environment variables (via Expo):
- * - EXPO_PUBLIC_SUPABASE_URL
- * - EXPO_PUBLIC_SUPABASE_ANON_KEY
- * - EXPO_PUBLIC_SUPABASE_FUNCTIONS_BASE_URL (optional, defaults to {url}/functions/v1)
+ * Environment: .env in mobile/ (loaded via app.config.js) or EXPO_PUBLIC_* at build time.
+ * Only EXPO_PUBLIC_* vars are used; never log or expose secrets.
  */
 
 import { createClient } from "@supabase/supabase-js";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 
-// Get environment variables
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
+const extra = Constants.expoConfig?.extra ?? {};
+const supabaseUrl =
+  (extra.supabaseUrl as string | undefined) ??
+  process.env.EXPO_PUBLIC_SUPABASE_URL ??
+  "";
+const supabaseAnonKey =
+  (extra.supabaseAnonKey as string | undefined) ??
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
+  "";
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl?.trim() || !supabaseAnonKey?.trim()) {
   console.warn(
-    "Supabase credentials not configured. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY."
+    "Supabase not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to .env (see .env.example). Provider/plans search will fail until set."
   );
 }
 
 /**
  * Supabase client instance.
- * Uses AsyncStorage for session persistence on mobile.
+ * In-memory auth storage for demo; no secrets logged.
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -50,12 +52,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 /**
  * Get the Edge Functions base URL.
- * Can be overridden via EXPO_PUBLIC_SUPABASE_FUNCTIONS_BASE_URL.
+ * From .env: EXPO_PUBLIC_SUPABASE_FUNCTIONS_BASE_URL (e.g. http://localhost:54321/functions/v1).
  */
 export function getFunctionsBaseUrl(): string {
-  const override = process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_BASE_URL;
-  if (override) {
-    return override.replace(/\/$/, ""); // Remove trailing slash
+  const override =
+    (extra.functionsBaseUrl as string | undefined) ??
+    process.env.EXPO_PUBLIC_SUPABASE_FUNCTIONS_BASE_URL;
+  if (override?.trim()) {
+    return override.replace(/\/$/, "");
   }
   return `${supabaseUrl}/functions/v1`;
 }

@@ -6,14 +6,15 @@ import uuid
 from datetime import datetime
 from app.services.db.supabase_db import db_service
 from app.services.rag.retriever import search_chunks
-from app.services.rag.generator import generate_response, GeneratedResponse
+from app.core.config import settings
+from app.services.rag.generator import generate_response, GeneratedResponse, _generate_stub
 from app.core.logging import safe_log_info, safe_log_error
 
 
 class ChatService:
     """Service for chat operations."""
     
-    def create_message(
+    async def create_message(
         self,
         session_id: str,
         user_id: str,
@@ -22,7 +23,7 @@ class ChatService:
     ) -> Dict[str, Any]:
         """
         Create a chat message and generate response.
-        Returns complete response (non-streaming).
+        Returns complete response (non-streaming). Uses shared LLM client (OpenAI/Gemini).
         """
         if not db_service.is_configured():
             # Return mock response
@@ -58,9 +59,9 @@ class ChatService:
                 doc_id=policy_doc_id
             )
             
-            # Generate response
+            # Generate response (async; uses LLM client)
             safe_log_info("Generating assistant response", session_id=session_id, chunks_count=len(retrieved_chunks))
-            generated = generate_response(content, retrieved_chunks)
+            generated = await generate_response(content, retrieved_chunks)
             
             # Convert citations
             citations = [
@@ -120,8 +121,9 @@ class ChatService:
         from app.services.rag.generator import _generate_with_llm_stream, _generate_stub
         
         if not db_service.is_configured():
-            # Stream mock response
-            yield from self._stream_mock_response(session_id)
+            # Stream mock response (sync generator → yield each in async)
+            for event in self._stream_mock_response(session_id):
+                yield event
             return
         
         user_message_id = None
@@ -171,11 +173,13 @@ class ChatService:
             # Send meta event
             yield stream_meta_event(session_id, assistant_message_id, citations)
             
-            # Generate and stream response
-            from app.core.config import settings
+            # Generate and stream response (shared LLM client: OpenAI or Gemini)
             from app.services.rag.generator import _generate_with_llm_stream
-            
-            if settings.openai_api_key and retrieved_chunks:
+            has_llm = (
+                (settings.openai_api_key and settings.openai_api_key.strip())
+                or (settings.gemini_api_key and settings.gemini_api_key.strip())
+            )
+            if has_llm and retrieved_chunks:
                 # Stream from LLM
                 try:
                     full_text = ""
@@ -184,8 +188,8 @@ class ChatService:
                             full_text += chunk
                             yield stream_delta_event(chunk)
                     
-                    # Get final response metadata
-                    final_response = generate_response(content, retrieved_chunks)
+                    # Get final response metadata (reuse stub shape for citations/disclaimer)
+                    final_response = _generate_stub(content, retrieved_chunks)
                     yield stream_final_event(
                         full_text,
                         final_response.confidence,
@@ -210,10 +214,12 @@ class ChatService:
                         safe_log_error("Failed to persist assistant message", e, session_id=session_id)
                 except Exception as e:
                     safe_log_error("LLM streaming failed, falling back to stub", e)
-                    yield from self._stream_stub_response(content, retrieved_chunks, session_id, assistant_message_id, citations)
+                    for event in self._stream_stub_response(content, retrieved_chunks, session_id, assistant_message_id, citations):
+                        yield event
             else:
-                # Stream stub response
-                yield from self._stream_stub_response(content, retrieved_chunks, session_id, assistant_message_id, citations)
+                # Stream stub response (sync generator → yield each in async)
+                for event in self._stream_stub_response(content, retrieved_chunks, session_id, assistant_message_id, citations):
+                    yield event
         
         except Exception as e:
             safe_log_error("Failed to stream chat message", e, session_id=session_id)

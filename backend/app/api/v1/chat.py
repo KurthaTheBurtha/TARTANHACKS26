@@ -87,7 +87,7 @@ async def create_chat_message(
         )
     
     try:
-        result = chat_service.create_message(
+        result = await chat_service.create_message(
             session_id=session_id,
             user_id=user_id,
             content=request.content

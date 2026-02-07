@@ -1,10 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronRight, MapPin, FileText, Shield, AlertCircle } from "lucide-react";
+import { ChevronRight, MapPin, FileText, Shield, AlertCircle, Loader2, ExternalLink } from "lucide-react";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_CAREMAP_BACKEND_URL || "http://localhost:8000";
+// Web: NEXT_PUBLIC_BACKEND_URL or NEXT_PUBLIC_CAREMAP_BACKEND_URL (default localhost:8000)
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_CAREMAP_BACKEND_URL ||
+  "http://localhost:8000";
+
+interface CaremapHealth {
+  bill_parser: "live" | "mock";
+  integrations: "live" | "mock";
+  rag: "live" | "mock";
+  guidance_llm: "live" | "mock";
+  demo_mode: boolean;
+}
 
 interface CaremapLineItem {
   description: string;
@@ -62,9 +74,27 @@ export default function CaremapPage() {
   const [sobFile, setSobFile] = useState<File | null>(null);
   const [zipCode, setZipCode] = useState("");
   const [specialty, setSpecialty] = useState("");
+  const [insuranceCarrier, setInsuranceCarrier] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CaremapResponse | null>(null);
+  const [caremapHealth, setCaremapHealth] = useState<CaremapHealth | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${BACKEND_URL}/v1/caremap/health`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`${res.status}`))))
+      .then((data: CaremapHealth) => {
+        if (!cancelled) setCaremapHealth(data);
+      })
+      .catch((err) => {
+        if (!cancelled) setHealthError(err?.message ?? "Unreachable");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,13 +117,23 @@ export default function CaremapPage() {
           specialty_keywords: specialty ? specialty.split(",").map((s) => s.trim()).filter(Boolean) : ["primary care"],
         })
       );
+      if (insuranceCarrier.trim()) {
+        form.append("network_context", JSON.stringify({ insurance_carrier: insuranceCarrier.trim() }));
+      }
       const res = await fetch(`${BACKEND_URL}/v1/caremap/ingest`, {
         method: "POST",
         body: form,
       });
       if (!res.ok) {
         const t = await res.text();
-        throw new Error(t || `Request failed: ${res.status}`);
+        let msg = t || `Request failed: ${res.status}`;
+        try {
+          const j = JSON.parse(t);
+          if (j.detail) msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
+        } catch {
+          if (t.length < 200) msg = t;
+        }
+        throw new Error(msg);
       }
       const data: CaremapResponse = await res.json();
       setResult(data);
@@ -103,6 +143,9 @@ export default function CaremapPage() {
       setLoading(false);
     }
   };
+
+  const mapsUrl = (lat: number, lng: number, label?: string) =>
+    `https://www.google.com/maps?q=${lat},${lng}${label ? `&query=${encodeURIComponent(label)}` : ""}`;
 
   return (
     <main id="main-content" className="min-h-screen bg-gradient-to-b from-slate-50 to-white py-16 px-6">
@@ -120,6 +163,19 @@ export default function CaremapPage() {
           <p className="mt-2 text-lg text-slate-600">
             Upload a medical bill (and optional summary of benefits) to get a plain-English breakdown, insurance guidance, and nearby in-network options.
           </p>
+          {(caremapHealth !== null || healthError) && (
+            <div className="mt-3 flex items-center gap-2 text-sm" aria-live="polite">
+              <span className="font-medium text-slate-600">Connection:</span>
+              {healthError ? (
+                <span className="rounded bg-red-100 px-2 py-0.5 text-red-800">Backend unreachable</span>
+              ) : caremapHealth ? (
+                <span className="rounded bg-slate-100 px-2 py-0.5 text-slate-700">
+                  Backend {caremapHealth.guidance_llm === "live" ? "live" : "mock"}
+                  {caremapHealth.demo_mode ? " (demo fixture)" : ""}
+                </span>
+              ) : null}
+            </div>
+          )}
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -149,7 +205,8 @@ export default function CaremapPage() {
                 placeholder="15213"
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-trust focus:ring-1 focus:ring-trust"
+                disabled={loading}
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-trust focus:ring-1 focus:ring-trust disabled:opacity-60"
               />
             </div>
             <div>
@@ -159,12 +216,24 @@ export default function CaremapPage() {
                 placeholder="primary care, cardiology"
                 value={specialty}
                 onChange={(e) => setSpecialty(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-trust focus:ring-1 focus:ring-trust"
+                disabled={loading}
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-trust focus:ring-1 focus:ring-trust disabled:opacity-60"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-slate-700">Insurance carrier (optional, e.g. upmc, bcbs, aetna)</label>
+              <input
+                type="text"
+                placeholder="upmc"
+                value={insuranceCarrier}
+                onChange={(e) => setInsuranceCarrier(e.target.value)}
+                disabled={loading}
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-trust focus:ring-1 focus:ring-trust disabled:opacity-60"
               />
             </div>
           </div>
           {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800" role="alert">
               <AlertCircle className="h-5 w-5 shrink-0" />
               <p>{error}</p>
             </div>
@@ -172,11 +241,25 @@ export default function CaremapPage() {
           <button
             type="submit"
             disabled={loading}
-            className="rounded-lg bg-trust px-6 py-3 font-medium text-white shadow-sm hover:bg-trust/90 disabled:opacity-60"
+            className="flex items-center justify-center gap-2 rounded-lg bg-trust px-6 py-3 font-medium text-white shadow-sm hover:bg-trust/90 disabled:opacity-60"
           >
-            {loading ? "Processing…" : "Get breakdown + navigation"}
+            {loading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Processing…
+              </>
+            ) : (
+              "Get breakdown + navigation"
+            )}
           </button>
         </form>
+
+        {loading && (
+          <div className="mt-6 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-slate-700" aria-live="polite">
+            <Loader2 className="h-5 w-5 animate-spin shrink-0" />
+            <span>Calling backend… Upload and analysis may take a few seconds. Works with DEMO_MODE (no keys required).</span>
+          </div>
+        )}
 
         {result && (
           <div className="mt-12 space-y-10">
@@ -186,14 +269,14 @@ export default function CaremapPage() {
                 <FileText className="h-5 w-5 text-slate-500" />
                 Bill breakdown
               </h2>
-              {result.bill.provider_name && (
+              {result.bill?.provider_name && (
                 <p className="text-sm text-slate-600">Provider: {result.bill.provider_name}</p>
               )}
-              {result.bill.service_dates && (
+              {result.bill?.service_dates && (
                 <p className="text-sm text-slate-600">Service dates: {result.bill.service_dates}</p>
               )}
               <ul className="mt-4 space-y-2">
-                {result.bill.line_items.map((item, i) => (
+                {(result.bill?.line_items ?? []).map((item, i) => (
                   <li key={i} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 py-2">
                     <span className="font-medium text-slate-900">{item.description}</span>
                     <span className="text-slate-600">
@@ -204,7 +287,7 @@ export default function CaremapPage() {
                 ))}
               </ul>
               <p className="mt-4 font-medium text-slate-900">
-                Patient responsibility: {formatCurrency(result.bill.patient_responsibility ?? undefined)}
+                Patient responsibility: {formatCurrency(result.bill?.patient_responsibility ?? undefined)}
               </p>
             </section>
 
@@ -215,17 +298,17 @@ export default function CaremapPage() {
                 Insurance summary
               </h2>
               <div className="flex flex-wrap gap-2">
-                {result.insurance.deductible_individual != null && (
+                {result.insurance?.deductible_individual != null && (
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
                     Deductible (individual): {formatCurrency(result.insurance.deductible_individual)}
                   </span>
                 )}
-                {result.insurance.oop_max_individual != null && (
+                {result.insurance?.oop_max_individual != null && (
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">
                     OOP max: {formatCurrency(result.insurance.oop_max_individual)}
                   </span>
                 )}
-                {result.insurance.disclaimers.map((d, i) => (
+                {(result.insurance?.disclaimers ?? []).map((d, i) => (
                   <span key={i} className="rounded-full bg-amber-50 px-3 py-1 text-sm text-amber-800">
                     {d}
                   </span>
@@ -236,12 +319,12 @@ export default function CaremapPage() {
             {/* Guidance */}
             <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="mb-2 text-lg font-semibold text-slate-900">Plain-English summary</h2>
-              <p className="text-slate-700">{result.guidance.summary_plain_english}</p>
-              {result.guidance.next_steps.length > 0 && (
+              <p className="text-slate-700">{result.guidance?.summary_plain_english ?? ""}</p>
+              {(result.guidance?.next_steps ?? []).length > 0 && (
                 <>
                   <h3 className="mt-4 font-medium text-slate-900">Next steps</h3>
                   <ul className="mt-2 list-inside list-disc text-slate-700">
-                    {result.guidance.next_steps.map((s, i) => (
+                    {(result.guidance?.next_steps ?? []).map((s, i) => (
                       <li key={i}>{s}</li>
                     ))}
                   </ul>
@@ -255,14 +338,14 @@ export default function CaremapPage() {
                 <MapPin className="h-5 w-5 text-slate-500" />
                 Nearby in-network options
               </h2>
-              <p className="text-sm text-slate-600">Query: {result.navigation.query_used}</p>
+              <p className="text-sm text-slate-600">Query: {result.navigation?.query_used ?? ""}</p>
               <ul className="mt-4 space-y-4">
-                {result.navigation.results.map((r, i) => (
+                {(result.navigation?.results ?? []).map((r, i) => (
                   <li key={i} className="rounded-lg border border-slate-100 p-4">
                     <p className="font-medium text-slate-900">{r.name}</p>
                     {r.address && <p className="text-sm text-slate-600">{r.address}</p>}
                     {r.phone && <p className="text-sm text-slate-600">{r.phone}</p>}
-                    <div className="mt-2 flex flex-wrap gap-2">
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
                       {r.distance_miles != null && (
                         <span className="text-xs text-slate-500">{r.distance_miles.toFixed(1)} mi</span>
                       )}
@@ -277,18 +360,27 @@ export default function CaremapPage() {
                       >
                         {r.network_status.replace("_", " ")}
                       </span>
-                      <span className="text-xs text-slate-400">lat/lng: {r.lat.toFixed(4)}, {r.lng.toFixed(4)}</span>
+                      <a
+                        href={mapsUrl(r.lat, r.lng, r.name)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-trust hover:underline"
+                      >
+                        <MapPin className="h-3.5 w-3.5" />
+                        Open in Maps
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
                     </div>
                   </li>
                 ))}
               </ul>
             </section>
 
-            {result.errors.length > 0 && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {(result.errors ?? []).length > 0 && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="alert">
                 <p className="font-medium">Partial results (some components used mock data):</p>
                 <ul className="mt-1 list-inside list-disc">
-                  {result.errors.map((e, i) => (
+                  {(result.errors ?? []).map((e, i) => (
                     <li key={i}>{e.component}: {e.message}</li>
                   ))}
                 </ul>

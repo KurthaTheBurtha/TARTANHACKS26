@@ -5,11 +5,12 @@ import { NextResponse } from "next/server";
  * Does not return the key value.
  */
 export async function GET() {
-  const key = process.env.GEMINI_API_KEY;
-  const configured = !!key?.trim();
+  const configured = !!process.env.GEMINI_API_KEY?.trim();
   return NextResponse.json({
     configured,
     provider: "gemini",
-    ...(configured && { keyPrefix: key!.slice(0, 10) + "..." }),
+    message: configured
+      ? "API key configured (value never exposed)."
+      : "Set GEMINI_API_KEY in .env.local for bill parsing.",
   });
 }
