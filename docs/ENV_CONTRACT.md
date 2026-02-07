@@ -1,6 +1,6 @@
 # CareMap — Environment variable contract
 
-Canonical env vars and where they are used. **Never commit real keys.** Copy from `.env.example` in each app directory.
+Canonical env vars and where they are used. **Never commit real keys.** There is a **single .env file at repo root**; copy `.env.example` to `.env` in the repo root and fill in values. All apps (backend, bill-parser, mobile) read from this file.
 
 ## Canonical list and usage
 
@@ -31,15 +31,13 @@ Canonical env vars and where they are used. **Never commit real keys.** Copy fro
 
 ## Loading and guardrails
 
-- **Backend:** `pydantic-settings` loads `backend/.env`. Startup logs a **warning** (no secrets) when Supabase or OpenAI are unset and mock mode is used.
-- **Bill-parser:** Next.js loads `.env.local` automatically. No key values are logged or returned (e.g. `/api/check-api-key` returns only `configured: true/false`).
-- **Integrations-abhay Edge:** Load with `supabase functions serve --env-file .env`. Uses `Deno.env.get()`; no dotenv in Deno.
-- **Mobile:** `app.config.js` runs `require('dotenv').config()` and passes only `EXPO_PUBLIC_*` into `extra`; app reads from `Constants.expoConfig?.extra` or `process.env`. Startup warns if Supabase vars are missing.
+All apps load from the **single root `.env`** (repo root). Copy `.env.example` to `.env` at repo root.
 
-## .env.example locations
+- **Backend:** `pydantic-settings` loads `[repo_root]/.env` (path resolved from `backend/app/core/config.py`). Falls back to `.env` in CWD if root file is missing. Startup logs a **warning** (no secrets) when Supabase or OpenAI are unset and mock mode is used.
+- **Bill-parser:** `next.config.mjs` runs `dotenv.config({ path: '../.env' })` so the root `.env` is loaded before Next.js starts. No key values are logged or returned (e.g. `/api/check-api-key` returns only `configured: true/false`).
+- **Integrations-abhay Edge:** When serving, use `supabase functions serve --env-file ../../.env` (from `integrations-abhay/`) so Edge functions read the root `.env`. Uses `Deno.env.get()`; no dotenv in Deno.
+- **Mobile:** `app.config.js` runs `require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') })` so the root `.env` is loaded. Only `EXPO_PUBLIC_*` are passed to `extra`; app reads from `Constants.expoConfig?.extra` or `process.env`. Startup warns if Supabase vars are missing.
 
-- **Root:** `/.env.example` — canonical reference.
-- **Backend:** `/backend/.env.example`
-- **Bill-parser:** `/bill-parser/.env.example` (copy to `.env.local`)
-- **Integrations-abhay:** `/integrations-abhay/.env.example`
-- **Mobile:** `/integrations-abhay/mobile/.env.example`
+## Single .env location
+
+- **Repo root:** `/.env` — single canonical file. Template: `/.env.example`. Do not commit `.env`.

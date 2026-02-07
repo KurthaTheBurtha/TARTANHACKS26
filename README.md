@@ -18,23 +18,17 @@ Unified flow: medical bill breakdown + insurance-aware guidance + in-network nav
 
 You can start without any keys; the backend and CareMap page use **mock data** when APIs are unset.
 
-To use live services:
+To use live services, use the **single .env at repo root** (all apps read from it):
 
-- **Backend:** copy env template and add keys in `backend/`
   ```bash
-  cp backend/.env.example backend/.env
+  cp .env.example .env
   ```
-  Edit `backend/.env`. Important (see `docs/ENV_CONTRACT.md` for full list):
+  Edit `.env`. Important (see `docs/ENV_CONTRACT.md` for full list):
   - `SUPABASE_URL`, `SUPABASE_ANON_KEY` (and optionally `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `DATABASE_URL`) for real DB/auth
   - `OPENAI_API_KEY` or `GEMINI_API_KEY` + `LLM_PROVIDER=openai|gemini` for live guidance
   - `BILL_PARSER_URL=http://localhost:3000` so CareMap ingest can call the bill-parser app
+  - `NEXT_PUBLIC_BACKEND_URL` or `NEXT_PUBLIC_CAREMAP_BACKEND_URL=http://localhost:8000` for the web app
   - `DEMO_MODE=true` for deterministic demo responses (no external calls)
-
-- **Frontend (bill-parser):** optional
-  ```bash
-  cp bill-parser/.env.example bill-parser/.env.local
-  ```
-  Set `NEXT_PUBLIC_CAREMAP_BACKEND_URL=http://localhost:8000` (default) and, for bill parsing, `GEMINI_API_KEY`.
 
 - **Where to get keys**
   - Supabase: [supabase.com](https://supabase.com) → project → Settings → API
@@ -75,7 +69,7 @@ make dev-frontend
 ### 3. CORS and ports
 
 - Backend binds to **0.0.0.0** and port **8000** (or `BACKEND_PORT`). Allowed CORS origins include `localhost:3000`, `localhost:8081`, and `127.0.0.1` variants so the Next.js app and Expo dev server can call the API.
-- To add more origins, set `ALLOWED_ORIGINS` in `backend/.env` (comma-separated).
+- To add more origins, set `ALLOWED_ORIGINS` in root `.env` (comma-separated).
 
 ### 4. Launch the UI and run the demo
 
@@ -96,9 +90,9 @@ make dev-frontend
    - Click **“Get breakdown + navigation”**.
    - You should see: **Bill breakdown** (line items), **Plain-English summary** (guidance), **Nearby in-network options** (list + “Open in Maps” links). Partial errors (if any) appear at the bottom.
 
-5. **Demo mode (no keys):** With backend env `DEMO_MODE=true`, the backend returns a fixed fixture; the same UI works without any API keys. Set in `backend/.env`: `DEMO_MODE=true`, then restart the backend.
+5. **Demo mode (no keys):** With `DEMO_MODE=true` in root `.env`, the backend returns a fixed fixture; the same UI works without any API keys. Restart the backend after changing `.env`.
 
-**Web app backend URL:** Set `NEXT_PUBLIC_BACKEND_URL` or `NEXT_PUBLIC_CAREMAP_BACKEND_URL` in `bill-parser/.env.local` if the backend is not at `http://localhost:8000`.
+**Web app backend URL:** Set `NEXT_PUBLIC_BACKEND_URL` or `NEXT_PUBLIC_CAREMAP_BACKEND_URL` in root `.env` if the backend is not at `http://localhost:8000`.
 
 ---
 
@@ -134,14 +128,14 @@ If you deploy later, use this as a reference. **No deployment is performed from 
 
 - **Build:** `pip install -r requirements.txt` (or leave empty if Render detects `requirements.txt`).
 - **Start:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT` (Render sets `PORT`).
-- **Required env (minimal for demo):** `DEMO_MODE=true` (or set Supabase/OpenAI/Gemini keys for live). See `backend/.env.example` and `docs/ENV_CONTRACT.md`.
+- **Required env (minimal for demo):** `DEMO_MODE=true` (or set Supabase/OpenAI/Gemini keys for live). See root `.env.example` and `docs/ENV_CONTRACT.md`.
 - **Verify:** `GET /health` → `{"ok": true}`; `GET /v1/caremap/health` → component status.
 
 ### Frontend — Web (e.g. Vercel)
 
 - **Build:** `npm install && npm run build` (in `bill-parser/`).
 - **Start:** `npm start` (or Vercel runs this automatically).
-- **Required env:** `NEXT_PUBLIC_BACKEND_URL` or `NEXT_PUBLIC_CAREMAP_BACKEND_URL` = your backend URL (e.g. `https://your-backend.onrender.com`). Optional: `GEMINI_API_KEY` for `/upload` bill parsing.
+- **Required env:** In root `.env`, set `NEXT_PUBLIC_BACKEND_URL` or `NEXT_PUBLIC_CAREMAP_BACKEND_URL` = your backend URL. Optional: `GEMINI_API_KEY` for bill parsing.
 - **Verify:** Open the deployed URL and hit `/caremap`; health is implied if the CareMap ingest request succeeds.
 
 ### Frontend — Mobile (Expo)

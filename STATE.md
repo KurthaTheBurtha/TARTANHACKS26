@@ -7,7 +7,7 @@ Owners: **Abdoul** (Backend/AI), **Abhay** (Integrations), **Kurt** (Frontend)
 
 ## Local demo (after Step 1: .env + API keys)
 
-- **Backend env:** `backend/.env` is loaded when running from `backend/` (e.g. `make dev-backend` from repo root does `cd backend && uvicorn`). Use `OPENAI_API_KEY` and/or `GEMINI_API_KEY`; set `LLM_PROVIDER=openai` or `LLM_PROVIDER=gemini`. `DEMO_MODE=true` forces deterministic fixture (no external calls).
+- **Env:** A **single `.env` at repo root** is used by backend, bill-parser, and mobile. Copy `.env.example` to `.env` and fill in values. Use `OPENAI_API_KEY` and/or `GEMINI_API_KEY`; set `LLM_PROVIDER=openai` or `LLM_PROVIDER=gemini`. `DEMO_MODE=true` forces deterministic fixture (no external calls).
 - **Active provider:** Whichever key is set and matches `LLM_PROVIDER`; `/v1/llm/health` reports `openai_configured` / `gemini_configured`.
 - **UI backend URL:** `NEXT_PUBLIC_BACKEND_URL` or `NEXT_PUBLIC_CAREMAP_BACKEND_URL` (default `http://localhost:8000`). CareMap page shows a small **Connection** indicator (live/mock/unreachable) from `GET /v1/caremap/health`.
 - **Ingest auth:** Ingest endpoint does not enforce auth currently. When `CAREMAP_INGEST_REQUIRE_AUTH` is implemented, set it to `false` in dev for local demo or wire JWT from the UI.
@@ -75,7 +75,7 @@ When you upload a PDF (e.g. `medical_bill.pdf`) on the CareMap page, the backend
 |-------|----------------|------------|
 | **Scanned/image PDF** | “No text could be extracted…” or “Unable to read this document… It may be a scanned image…” | The parser uses text extraction (no OCR). Use a **text-based PDF** (e.g. downloaded from a portal) or run the PDF through an OCR tool first, then upload the result. |
 | **File too large** | “File too large. Maximum size is 10MB.” | Use a PDF under 10MB, or increase `MAX_FILE_SIZE_BYTES` in `bill-parser/app/api/parse-bill/route.ts`. |
-| **Bill parser not configured** | “Bill parser not configured; using mock data.” | Set `BILL_PARSER_URL` in `backend/.env` (e.g. `http://localhost:3000`) and run the Next.js app so the backend can call `POST /api/parse-bill`. |
+| **Bill parser not configured** | “Bill parser not configured; using mock data.” | Set `BILL_PARSER_URL` in root `.env` (e.g. `http://localhost:3000`) and run the Next.js app so the backend can call `POST /api/parse-bill`. |
 | **Bill parser unreachable** | “Bill parser unavailable; using mock data.” | Ensure the app at `BILL_PARSER_URL` is running; check URL (no trailing slash), port, and firewall. |
 | **Gemini key missing (bill-parser)** | Bill parser returns 500; backend shows “API key not configured…” (or 500) in the amber box. | Add `GEMINI_API_KEY` to `bill-parser/.env.local` and restart the Next.js dev server. The **backend** uses its own keys for guidance; the **bill-parser** app needs Gemini for PDF → structured JSON. |
 | **Unusual layout / format** | “Unable to extract structured data from the bill…” | The AI could not return valid JSON. Try a clearer bill or a different file. |
@@ -141,7 +141,7 @@ make dev-backend
 make dev-frontend
 ```
 
-Optional: set `DEMO_MODE=true` in `backend/.env` for deterministic responses (no external keys needed).
+Optional: set `DEMO_MODE=true` in root `.env` for deterministic responses (no external keys needed).
 
 Verify backend:
 

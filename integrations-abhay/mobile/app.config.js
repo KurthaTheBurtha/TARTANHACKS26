@@ -1,8 +1,9 @@
 /**
- * Expo app config — loads .env via dotenv so EXPO_PUBLIC_* are available.
+ * Expo app config — loads repo root .env via dotenv so EXPO_PUBLIC_* are available.
  * Only EXPO_PUBLIC_* (client-safe) are passed to extra; never log or expose secrets.
  */
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "..", "..", ".env") });
 
 const appJson = require("./app.json");
 

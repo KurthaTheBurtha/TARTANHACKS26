@@ -1,11 +1,16 @@
+from pathlib import Path
+
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List, Optional
 
+# Repo root .env (backend/app/core -> ... -> backend -> repo root)
+_ROOT_ENV = Path(__file__).resolve().parent.parent.parent.parent / ".env"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=[str(_ROOT_ENV), ".env"],
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
