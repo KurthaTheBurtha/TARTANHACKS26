@@ -1,230 +1,249 @@
 "use client";
 
-import Link from "next/link";
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
-import CountUp from "react-countup";
-import { Logo } from "@/components/logo";
-import { fadeIn, staggerContainer, staggerItem } from "@/lib/animations";
-import {
+import { 
+  FileText, 
+  MessageCircle, 
+  MapPin,
+  Calendar,
+  AlertCircle,
   ArrowRight,
   DollarSign,
-  MapPin,
-  Pill,
-  Upload,
-  Sparkles,
-  FileCheck,
+  Shield,
+  Activity
 } from "lucide-react";
+import Link from "next/link";
 
-export default function Home() {
-  const statsRef = useRef(null);
-  const isStatsInView = useInView(statsRef, { once: true, margin: "-50px" });
+const quickActions = [
+  {
+    icon: FileText,
+    title: "Upload Bill",
+    description: "Analyze a new medical document",
+    path: "/documents",
+    color: "secondary",
+  },
+  {
+    icon: MessageCircle,
+    title: "Ask Question",
+    description: "Get insurance-aware answers",
+    path: "/chat",
+    color: "primary",
+  },
+  {
+    icon: MapPin,
+    title: "Find Care",
+    description: "Locate in-network providers",
+    path: "/care-map",
+    color: "success",
+  },
+];
 
-  const features = [
-    {
-      icon: DollarSign,
-      iconColor: "text-savings",
-      title: "Find Overcharges",
-      description:
-        "AI compares your charges to Medicare rates and finds errors worth $2,800 on average",
-    },
-    {
-      icon: MapPin,
-      iconColor: "text-trust",
-      title: "Find Affordable Care",
-      description:
-        "See in-network options nearby based on your symptoms and insurance",
-    },
-    {
-      icon: Pill,
-      iconColor: "text-danger",
-      title: "Check Your Meds",
-      description:
-        "Detect dangerous drug interactions and find cheaper alternatives",
-    },
-  ];
+const recentBills = [
+  { id: 1, provider: "City Medical Center", date: "Jan 15, 2024", amount: 450.00, status: "pending" },
+  { id: 2, provider: "Valley Lab Services", date: "Jan 8, 2024", amount: 125.50, status: "paid" },
+  { id: 3, provider: "Downtown Imaging", date: "Dec 28, 2023", amount: 875.00, status: "insurance" },
+];
 
-  const steps = [
-    {
-      number: 1,
-      icon: Upload,
-      title: "Upload Your Bill",
-      description: "Drag and drop your medical bill PDF",
-    },
-    {
-      number: 2,
-      icon: Sparkles,
-      title: "AI Analyzes in Seconds",
-      description:
-        "Our AI compares every charge to Medicare rates and industry standards",
-    },
-    {
-      number: 3,
-      icon: FileCheck,
-      title: "Get Your Savings Report",
-      description:
-        "See exactly what was overcharged and download your appeal letter",
-    },
-  ];
+const upcomingAppointments = [
+  { id: 1, provider: "Dr. Sarah Chen", specialty: "Primary Care", date: "Feb 12, 2024", time: "10:30 AM" },
+  { id: 2, provider: "Quest Diagnostics", specialty: "Lab Work", date: "Feb 18, 2024", time: "8:00 AM" },
+];
 
+export default function Dashboard() {
   return (
-    <main id="main-content" className="flex min-h-screen flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-slate-50 to-trust/5 py-16 md:py-24">
-        <div className="mx-auto max-w-4xl px-4 text-center">
-        <motion.div variants={fadeIn} initial="initial" animate="animate" className="mb-8 flex justify-center">
-          <Logo height={56} />
-        </motion.div>
-        <motion.h1
-          variants={fadeIn}
-          initial="initial"
-          animate="animate"
-          className="mb-6 text-4xl font-bold text-slate-900 md:text-6xl"
-        >
-          Stop Overpaying for Healthcare
-        </motion.h1>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="font-display font-bold text-2xl lg:text-3xl text-foreground mb-2">
+          Welcome back, Alex
+        </h1>
+        <p className="text-muted-foreground">
+          Here&apos;s an overview of your healthcare information
+        </p>
+      </div>
 
-        <motion.p
-          variants={fadeIn}
-          initial="initial"
-          animate="animate"
-          transition={{ delay: 0.1 }}
-          className="mb-8 text-xl text-slate-600"
-        >
-          Your AI-powered advocate finds billing errors, dangerous drug
-          interactions, and affordable care nearby
-        </motion.p>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-card rounded-xl p-5 border border-border shadow-card">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-secondary" />
+            </div>
+            <span className="text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">
+              -12%
+            </span>
+          </div>
+          <p className="text-2xl font-bold text-foreground mb-1">$1,250</p>
+          <p className="text-sm text-muted-foreground">Pending Bills</p>
+        </div>
 
-        <motion.div
-          variants={fadeIn}
-          initial="initial"
-          animate="animate"
-          transition={{ delay: 0.2 }}
-          className="flex flex-wrap items-center justify-center gap-4"
-        >
-          <Link
-            href="/upload"
-            className="inline-block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trust focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-          >
-            <motion.span
-              className="flex items-center justify-center gap-2 rounded-xl bg-trust px-8 py-4 text-lg font-semibold text-white shadow-lg transition-colors hover:bg-trust-dark hover:shadow-xl"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Upload Your Bill
-              <ArrowRight className="h-5 w-5" />
-            </motion.span>
-          </Link>
-          <Link
-            href="/caremap"
-            className="inline-block rounded-xl border-2 border-slate-300 bg-white px-8 py-4 text-lg font-semibold text-slate-700 shadow-sm transition-colors hover:border-trust hover:bg-slate-50 hover:text-trust focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trust focus-visible:ring-offset-2"
-          >
-            Try full demo (CareMap)
-          </Link>
-        </motion.div>
+        <div className="bg-card rounded-xl p-5 border border-border shadow-card">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full">
+              2024
+            </span>
+          </div>
+          <p className="text-2xl font-bold text-foreground mb-1">$850/$2,500</p>
+          <p className="text-sm text-muted-foreground">Deductible Met</p>
+        </div>
 
-        <motion.div
-          ref={statsRef}
-          variants={fadeIn}
-          initial="initial"
-          animate={isStatsInView ? "animate" : "initial"}
-          transition={{ delay: 0.4 }}
-          className="mt-12 rounded-2xl border border-slate-200/80 bg-white/60 px-8 py-6 shadow-sm backdrop-blur-sm"
-        >
-          <p className="font-mono text-4xl font-bold text-savings md:text-6xl">
-            {isStatsInView ? (
-              <CountUp
-                start={0}
-                end={847392}
-                duration={2.5}
-                prefix="$"
-                separator=","
-                useEasing
-              />
-            ) : (
-              "$0"
-            )}
-          </p>
-          <p className="mt-2 text-slate-600">saved for patients</p>
-        </motion.div>
+        <div className="bg-card rounded-xl p-5 border border-border shadow-card">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
+              <Activity className="w-5 h-5 text-success" />
+            </div>
+            <span className="text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">
+              +2
+            </span>
+          </div>
+          <p className="text-2xl font-bold text-foreground mb-1">$1,420</p>
+          <p className="text-sm text-muted-foreground">HSA Balance</p>
+        </div>
+
+        <div className="bg-card rounded-xl p-5 border border-border shadow-card">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+              <AlertCircle className="w-5 h-5 text-destructive" />
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-foreground mb-1">1</p>
+          <p className="text-sm text-muted-foreground">Action Required</p>
         </div>
       </div>
 
-      {/* Features section */}
-      <section className="bg-white py-16 md:py-24">
-        <div className="mx-auto max-w-6xl px-4">
-          <h2 className="mb-12 text-center text-3xl font-bold text-slate-900">
-            Three Tools, One Mission
-          </h2>
-          <motion.div
-            className="grid grid-cols-1 gap-8 md:grid-cols-3"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true, margin: "-50px" }}
-          >
-            {features.map((feature) => {
-              const Icon = feature.icon;
-              return (
-              <motion.div
-                key={feature.title}
-                variants={staggerItem}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.98 }}
-                className="rounded-2xl bg-slate-50 p-8 shadow-sm transition-shadow hover:shadow-card-hover"
-              >
-                <Icon
-                  className={`mb-4 h-12 w-12 ${feature.iconColor}`}
-                  strokeWidth={1.5}
-                />
-                <h3 className="text-xl font-semibold text-slate-900">
-                  {feature.title}
-                </h3>
-                <p className="mt-3 text-slate-600">{feature.description}</p>
-              </motion.div>
-            );
-            })}
-          </motion.div>
+      {/* Quick Actions */}
+      <div className="mb-8">
+        <h2 className="font-display font-semibold text-lg text-foreground mb-4">
+          Quick Actions
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {quickActions.map((action) => (
+            <Link
+              key={action.title}
+              href={action.path}
+              className="group bg-card rounded-xl p-5 border border-border shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                action.color === 'secondary' ? 'bg-secondary/10' :
+                action.color === 'primary' ? 'bg-primary/10' :
+                'bg-success/10'
+              }`}>
+                <action.icon className={`w-6 h-6 ${
+                  action.color === 'secondary' ? 'text-secondary' :
+                  action.color === 'primary' ? 'text-primary' :
+                  'text-success'
+                }`} />
+              </div>
+              <h3 className="font-semibold text-foreground mb-1 group-hover:text-secondary transition-colors">
+                {action.title}
+              </h3>
+              <p className="text-sm text-muted-foreground">{action.description}</p>
+            </Link>
+          ))}
         </div>
-      </section>
+      </div>
 
-      {/* How It Works section */}
-      <section className="bg-gradient-to-b from-white to-slate-50 py-12 md:py-24">
-        <div className="mx-auto max-w-3xl px-4">
-          <h2 className="mb-12 text-center text-3xl font-bold text-slate-900">
-            Save Money in 3 Steps
-          </h2>
-          <div className="relative border-l-2 border-trust/30 pl-12">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              return (
-                <motion.div
-                  key={step.number}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.4, delay: index * 0.15 }}
-                  className="relative pb-12 last:pb-0"
-                >
-                  <div className="absolute left-0 flex h-16 w-16 -translate-x-1/2 items-center justify-center rounded-full bg-trust text-2xl font-bold text-white">
-                    {step.number}
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Bills */}
+        <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <h2 className="font-display font-semibold text-foreground">Recent Bills</h2>
+            <Link href="/documents" className="text-sm text-secondary hover:underline flex items-center gap-1">
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="divide-y divide-border">
+            {recentBills.map((bill) => (
+              <div key={bill.id} className="flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  <div className="flex items-center gap-6 rounded-xl bg-white p-6 shadow-card">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-trust/10">
-                      <Icon className="h-6 w-6 text-trust" strokeWidth={1.5} />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-900">
-                        {step.title}
-                      </h3>
-                      <p className="mt-1 text-slate-600">{step.description}</p>
-                    </div>
+                  <div>
+                    <p className="font-medium text-foreground">{bill.provider}</p>
+                    <p className="text-sm text-muted-foreground">{bill.date}</p>
                   </div>
-                </motion.div>
-              );
-            })}
+                </div>
+                <div className="text-right">
+                  <p className="font-semibold text-foreground">${bill.amount.toFixed(2)}</p>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    bill.status === 'paid' ? 'bg-success/10 text-success' :
+                    bill.status === 'pending' ? 'bg-destructive/10 text-destructive' :
+                    'bg-secondary/10 text-secondary'
+                  }`}>
+                    {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </section>
-    </main>
+
+        {/* Upcoming Appointments */}
+        <div className="bg-card rounded-xl border border-border shadow-card overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <h2 className="font-display font-semibold text-foreground">Upcoming Appointments</h2>
+            <Link href="/appointments" className="text-sm text-secondary hover:underline flex items-center gap-1">
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <div className="divide-y divide-border">
+            {upcomingAppointments.map((apt) => (
+              <div key={apt.id} className="flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-secondary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{apt.provider}</p>
+                    <p className="text-sm text-muted-foreground">{apt.specialty}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium text-foreground">{apt.date}</p>
+                  <p className="text-sm text-muted-foreground">{apt.time}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="px-5 py-4 border-t border-border">
+            <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-background hover:bg-muted transition-colors text-foreground font-medium">
+              <Calendar className="w-4 h-4" />
+              Schedule Appointment
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Insurance Summary Card */}
+      <div className="mt-6 bg-hero-gradient rounded-xl p-6 text-primary-foreground">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-display font-semibold text-lg mb-2">Your Insurance Plan</h3>
+            <p className="text-primary-foreground/80 mb-4">Blue Cross Blue Shield - PPO Gold</p>
+            <div className="flex flex-wrap gap-6 text-sm">
+              <div>
+                <p className="text-primary-foreground/60">Primary Care Copay</p>
+                <p className="font-semibold">$25</p>
+              </div>
+              <div>
+                <p className="text-primary-foreground/60">Specialist Copay</p>
+                <p className="font-semibold">$50</p>
+              </div>
+              <div>
+                <p className="text-primary-foreground/60">Out-of-Pocket Max</p>
+                <p className="font-semibold">$6,500</p>
+              </div>
+            </div>
+          </div>
+          <button className="px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground font-medium text-sm transition-colors">
+            View Details
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

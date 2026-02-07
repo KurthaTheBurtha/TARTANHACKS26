@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
+/* CareMap Design System - Healthcare colors from logo */
+
+@layer base {
+  :root {
+    /* Core brand colors from logo */
+    --background: 210 20% 98%;
+    --foreground: 209 55% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 209 55% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 209 55% 20%;
+
+    /* Navy blue from logo */
+    --primary: 209 55% 25%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Teal from logo */
+    --secondary: 173 58% 39%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Soft backgrounds */
+    --muted: 210 20% 96%;
+    --muted-foreground: 209 30% 45%;
+
+    /* Teal accent */
+    --accent: 173 58% 39%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Success green from logo dots */
+    --success: 142 52% 50%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning/Rating yellow */
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 0%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 90%;
+    --input: 210 20% 90%;
+    --ring: 173 58% 39%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar - matching theme */
+    --sidebar-background: 209 55% 20%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 173 58% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 209 55% 30%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 209 55% 30%;
+    --sidebar-ring: 173 58% 45%;
+
+    /* Custom gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(209, 55%, 20%) 0%, hsl(209, 55%, 30%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(210, 20%, 98%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(173, 58%, 39%) 0%, hsl(173, 58%, 50%) 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(209 55% 20% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(209 55% 20% / 0.08), 0 2px 4px -2px hsl(209 55% 20% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(209 55% 20% / 0.1), 0 4px 6px -4px hsl(209 55% 20% / 0.08);
+    --shadow-xl: 0 20px 25px -5px hsl(209 55% 20% / 0.1), 0 8px 10px -6px hsl(209 55% 20% / 0.08);
+  }
+
+  .dark {
+    --background: 209 55% 10%;
+    --foreground: 210 20% 98%;
+
+    --card: 209 55% 15%;
+    --card-foreground: 210 20% 98%;
+
+    --popover: 209 55% 15%;
+    --popover-foreground: 210 20% 98%;
+
+    --primary: 173 58% 45%;
+    --primary-foreground: 209 55% 10%;
+
+    --secondary: 209 55% 25%;
+    --secondary-foreground: 210 20% 98%;
+
+    --muted: 209 55% 20%;
+    --muted-foreground: 210 20% 65%;
+
+    --accent: 173 58% 39%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 142 52% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --destructive: 0 62.8% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 209 55% 25%;
+    --input: 209 55% 25%;
+    --ring: 173 58% 45%;
+
+    --sidebar-background: 209 55% 8%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 173 58% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 209 55% 15%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 209 55% 20%;
+    --sidebar-ring: 173 58% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(173, 58%, 39%) 0%, hsl(142, 52%, 50%) 100%);
+  }
+
+  .bg-hero-gradient {
+    background: linear-gradient(135deg, hsl(209, 55%, 20%) 0%, hsl(209, 55%, 30%) 100%);
+  }
+
+  .bg-card-gradient {
+    background: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(210, 20%, 98%) 100%);
+  }
+
+  .shadow-card {
+    box-shadow: 0 4px 6px -1px hsl(209 55% 20% / 0.08), 0 2px 4px -2px hsl(209 55% 20% / 0.06);
+  }
+
+  .shadow-card-hover {
+    box-shadow: 0 20px 25px -5px hsl(209 55% 20% / 0.1), 0 8px 10px -6px hsl(209 55% 20% / 0.08);
+  }
+}

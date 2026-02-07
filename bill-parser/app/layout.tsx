@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import Footer from "@/components/footer";
 import { ToasterProvider } from "@/components/toaster-provider";
 import SkipNav from "@/components/skip-nav";
-import { Logo } from "@/components/logo";
+import AppLayout from "@/components/app-layout";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,25 +11,26 @@ const inter = Inter({
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
+  variable: "--font-plus-jakarta",
+  weight: ["500", "600", "700", "800"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "CareMap | Stop Overpaying for Healthcare",
+  title: "CareMap | Your Healthcare Navigator",
   description:
-    "AI-powered medical bill analysis finds errors and saves you money. Upload your bill for a detailed breakdown.",
+    "AI-powered medical bill analysis finds errors and saves you money. Navigate healthcare with clarity and confidence.",
   openGraph: {
-    title: "CareMap | Stop Overpaying for Healthcare",
+    title: "CareMap | Your Healthcare Navigator",
     description:
-      "AI-powered medical bill analysis finds errors and saves you money. Upload your bill for a detailed breakdown.",
+      "AI-powered medical bill analysis finds errors and saves you money. Navigate healthcare with clarity and confidence.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "CareMap | Stop Overpaying for Healthcare",
+    title: "CareMap | Your Healthcare Navigator",
     description:
       "AI-powered medical bill analysis finds errors and saves you money.",
   },
@@ -47,30 +46,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable}`}>
       <body className="font-sans antialiased">
         <SkipNav />
-        <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-            <Logo height={44} />
-            <nav className="flex items-center gap-6 text-sm font-medium text-slate-600">
-              <Link
-                href="/upload"
-                className="transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trust focus-visible:ring-offset-2 rounded"
-              >
-                Bill Analyzer
-              </Link>
-              <Link
-                href="/demo"
-                className="transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-trust focus-visible:ring-offset-2 rounded"
-              >
-                Demo
-              </Link>
-            </nav>
-          </div>
-        </header>
-        {children}
-        <Footer />
+        <AppLayout>
+          {children}
+        </AppLayout>
         <ToasterProvider />
       </body>
     </html>
