@@ -219,7 +219,10 @@ export async function POST(request: Request) {
 
     if (err.message.includes("ANTHROPIC_API_KEY")) {
       return NextResponse.json(
-        { error: "API configuration error" },
+        {
+          error:
+            "API key not configured. Add ANTHROPIC_API_KEY to .env.local and restart the dev server.",
+        },
         { status: 500 }
       );
     }

@@ -1,4 +1,4 @@
-# Medical Bill Analyzer
+# CareMap
 
 **AI-powered medical bill analysis that finds errors and helps you save money.**
 

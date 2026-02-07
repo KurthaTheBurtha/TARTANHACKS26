@@ -15,7 +15,7 @@ export default function DemoPage() {
       {/* Header */}
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold text-slate-900 md:text-5xl">
-          Medical Bill Analyzer — Demo
+          CareMap — Demo
         </h1>
         <p className="mt-2 text-base text-slate-600">
           Click a tab to see instant analysis. No upload needed.

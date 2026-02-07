@@ -26,7 +26,7 @@ export default function DesignSystemPage() {
           Design System
         </h1>
         <p className="mb-12 text-base text-slate-600">
-          Visual reference guide for HealthAdvocate components
+          Visual reference guide for CareMap components
         </p>
 
         <div className="space-y-16">

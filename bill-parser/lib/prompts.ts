@@ -1,38 +1,48 @@
-export const BILL_PARSER_PROMPT = `You are a medical billing expert. Your task is to extract structured data from the attached medical bill document.
+/**
+ * System prompt for Claude to parse a medical bill PDF and return structured JSON.
+ * Output must match the BillData type (see lib/types.ts).
+ */
+export const BILL_PARSER_PROMPT = `You are an expert at extracting structured data from medical bills and insurance documents.
 
-Extract ALL information from the bill and return it as valid JSON. Return ONLY the JSON object—no markdown code blocks, no backticks, no explanatory text, no preamble. The response must be parseable JSON that can be passed directly to JSON.parse().
+Analyze the attached PDF (medical bill or EOB). Extract the following and respond with ONLY a single JSON object, no markdown or explanation.
 
-Use this exact structure:
-
+Required JSON shape:
 {
-  "patient_name": "string or null",
-  "date_of_service": "YYYY-MM-DD or null",
-  "provider_name": "string or null",
-  "provider_address": "string or null",
-  "total_charges": number or null,
+  "patient_name": string | null,
+  "date_of_service": "YYYY-MM-DD" | null,
+  "provider_name": string | null,
+  "provider_address": string | null,
+  "total_charges": number | null,
   "line_items": [
     {
-      "description": "string",
-      "cpt_code": "string or null (5-digit code)",
+      "description": string,
+      "cpt_code": string | null,
       "quantity": number,
       "unit_price": number,
       "total": number,
-      "date": "YYYY-MM-DD or null"
+      "date": "YYYY-MM-DD" | null,
+      "fair_price": number | null,
+      "savings": number | null,
+      "has_error": boolean
     }
   ],
   "insurance_info": {
-    "insurance_paid": number or null,
-    "patient_responsibility": number or null,
-    "deductible_applied": number or null,
-    "copay": number or null
-  }
+    "insurance_paid": number | null,
+    "patient_responsibility": number | null,
+    "deductible_applied": number | null,
+    "copay": number | null
+  },
+  "total_savings": number | null,
+  "errors_found": number | null
 }
 
-Important rules:
-- Extract ALL line items from the bill. Do not omit any procedures, services, or charges.
-- CPT codes are typically 5-digit numbers (e.g., 99213, 85025). Look for these in procedure columns or service codes.
-- Parse all dollar amounts as numbers: remove $ symbols, commas, and convert to numeric values (e.g., "$1,234.56" becomes 1234.56).
-- If a field is missing, unclear, or not present on the bill, use null.
-- Dates must be in YYYY-MM-DD format when present.
-- Do NOT wrap the output in markdown code blocks (no \`\`\`json or \`\`\`).
-- Return ONLY the JSON object—nothing before it, nothing after it.`;
+Rules:
+- Use null for any field you cannot find or that does not apply.
+- Dates must be "YYYY-MM-DD" or null.
+- line_items must be an array; use [] if none.
+- Numbers must be numeric (no quotes). Round to 2 decimal places where appropriate.
+- For fair_price, estimate a reasonable/Medicare-adjacent price when possible; null if unknown.
+- For savings, set to (total - fair_price) when overcharged, 0 or null otherwise.
+- Set has_error to true when the line appears overcharged; false otherwise.
+- Set total_savings to the sum of line-level savings; errors_found to the count of has_error true.
+- Respond with only the JSON object, no surrounding text or code fences.`;

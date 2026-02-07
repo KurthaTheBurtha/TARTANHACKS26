@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import CountUp from "react-countup";
+import { Logo } from "@/components/logo";
 import { fadeIn, staggerContainer, staggerItem } from "@/lib/animations";
 import {
   ArrowRight,
@@ -70,6 +71,9 @@ export default function Home() {
     <main id="main-content" className="flex min-h-screen flex-col">
       <div className="flex flex-1 flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-slate-50 to-trust/5 py-16 md:py-24">
         <div className="mx-auto max-w-4xl px-4 text-center">
+        <motion.div variants={fadeIn} initial="initial" animate="animate" className="mb-8 flex justify-center">
+          <Logo height={56} />
+        </motion.div>
         <motion.h1
           variants={fadeIn}
           initial="initial"
