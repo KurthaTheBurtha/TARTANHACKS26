@@ -118,3 +118,199 @@ M2: Mobile boots + chat-first UI + mock responses wired
 M3: Doc upload + analyze → summary shown in app
 M4: Policy ingest → embeddings → RAG answer with citations
 M5: Map search → in-network shell + provider list rendering
+
+## Changelog
+
+### 2026-02-06 23:12:01 EST
+- **Owner:** Abdoul
+- **Summary:** Enhanced Makefile with strict pre-push checks and demo workflow. Added `make check` target that fails on formatting/lint/syntax/test issues (no `|| true`), `make smoke` for endpoint smoke testing with demo seed, `make demo` for full bootstrap+seed+server workflow, and updated `test-quick` to use deterministic mock mode. Created `smoke.sh` script that tests key endpoints (health, me, providers/search) with graceful jq fallback. Updated README with dev commands section.
+- **Files changed:**
+  - `backend/Makefile` (Added check, check-ci, smoke, demo targets; updated test-quick to use mock mode)
+  - `backend/scripts/smoke.sh` (NEW: Endpoint smoke testing script with jq fallback)
+  - `backend/README.md` (Added "Dev Commands" section with quick reference)
+- **Contracts changed?** No — Makefile targets and scripts are tooling only, no API contract changes.
+- **Next TODO / dependencies:**
+  - Run `make check` before every push to catch issues early
+  - Use `make smoke` to verify backend is working before demos
+  - Use `make demo` for one-command demo setup
+  - Consider adding `make check` to pre-commit hook
+
+### 2026-02-06 23:04:32 EST
+- **Owner:** Abdoul
+- **Summary:** Implemented security boundary testing and RLS isolation validation. Added `/v1/me` whoami endpoint, test auth override mechanism (X-Test-User header when TEST_BYPASS_AUTH=true), and comprehensive isolation tests for docs, policies, chat, and providers ensuring zero cross-tenant data leakage. Created integration smoke test suite covering all major endpoints. All tests run in mock mode (no Supabase required) and optionally in Supabase mode with real RLS validation.
+- **Files changed:**
+  - `backend/app/api/v1/me.py` (NEW: GET /v1/me whoami endpoint)
+  - `backend/app/api/router.py` (Added /v1/me router)
+  - `backend/app/core/security.py` (Added test override support via X-Test-User header)
+  - `backend/app/core/config.py` (Added test_bypass_auth and auth_mode settings)
+  - `backend/app/models/schemas.py` (Added MeResponse schema)
+  - `backend/tests/conftest.py` (Updated to use X-Test-User header, added TEST_USER_A/B constants)
+  - `backend/tests/test_auth_me.py` (NEW: Auth and /me endpoint tests)
+  - `backend/tests/test_rls_isolation_docs.py` (NEW: Document isolation tests)
+  - `backend/tests/test_rls_isolation_policies.py` (NEW: Policy isolation tests)
+  - `backend/tests/test_rls_isolation_chat.py` (NEW: Chat isolation tests)
+  - `backend/tests/test_rls_isolation_providers_cache.py` (NEW: Provider cache isolation tests)
+  - `backend/tests/test_integration_smoke.py` (NEW: Integration smoke test suite)
+  - `docs/architecture/auth_rls_audit.md` (NEW: Authentication and RLS audit documentation)
+- **Contracts changed?** Yes — Additive:
+  - Added `GET /v1/me` endpoint returning `{ user_id, auth_source, scopes[], issued_at }`
+  - Test override mechanism (X-Test-User header) only active when TEST_BYPASS_AUTH=true (test mode only)
+- **Next TODO / dependencies:**
+  - Run isolation tests in Supabase mode to validate RLS policies work correctly
+  - Verify all cross-tenant access attempts return 404 (not 403) consistently
+  - Consider adding audit logging for cross-tenant access attempts
+  - Review RLS policies in Supabase dashboard to ensure they match test expectations
+
+### 2026-02-06 23:03:17 EST
+- **Owner:** Abdoul
+- **Summary:** Added streaming chat endpoint with SSE and demo seed script. Implemented `POST /v1/chat/sessions/{id}/messages/stream` that streams responses token-by-token using Server-Sent Events, with support for both LLM streaming (OpenAI) and stub streaming (deterministic chunks). Created shared chat service to orchestrate persistence, retrieval, and generation for both streaming and non-streaming endpoints. Added demo seed script that populates database with sample policy chunks, analyzed documents, chat sessions, and providers for instant demos.
+- **Files changed:**
+  - `backend/app/api/v1/chat.py` (Added streaming endpoint, refactored to use shared chat service)
+  - `backend/app/services/chat/chat_service.py` (NEW: Shared chat service for message creation and streaming)
+  - `backend/app/services/rag/generator.py` (Added `_generate_with_llm_stream` async generator for OpenAI streaming)
+  - `backend/app/core/sse.py` (NEW: SSE event formatting helpers)
+  - `backend/app/models/schemas.py` (Added CreateChatStreamRequest schema)
+  - `backend/app/core/config.py` (Added demo mode settings: demo_mode, demo_user_id, demo_policy_doc_id)
+  - `backend/scripts/seed_demo.py` (NEW: Demo data seeding script)
+  - `backend/tests/test_chat_stream.py` (NEW: Streaming endpoint contract tests)
+  - `docs/architecture/streaming_chat.md` (NEW: Streaming chat architecture and mobile integration guide)
+- **Contracts changed?** Yes — Additive:
+  - Added `POST /v1/chat/sessions/{session_id}/messages/stream` endpoint returning `text/event-stream`
+  - SSE events: `meta` (citations early), `delta` (incremental text), `final` (complete response), `error` (errors)
+  - Final event JSON matches existing non-stream chat contract shape
+  - Non-stream endpoint now uses shared chat service (same logic, different output format)
+- **Next TODO / dependencies:**
+  - Test streaming endpoint with real OpenAI key to verify LLM streaming works
+  - Run `python backend/scripts/seed_demo.py` to populate demo data
+  - Mobile team can integrate SSE using EventSource API or react-native-sse
+  - Verify streaming works in production with proper proxy configuration
+
+### 2026-02-06 23:01:27 EST
+- **Owner:** Abdoul
+- **Summary:** Added reliability and repeatability infrastructure: contract tests for all endpoints, canonical contract examples, dev bootstrap workflow, and GitHub Actions CI. Tests run in mock mode (no Supabase/OpenAI required) and validate response shapes match guaranteed contracts. Added Makefile with dev/test/lint targets and bootstrap scripts for one-command local setup.
+- **Files changed:**
+  - `backend/app/core/contracts.py` (NEW: Canonical contract examples for all endpoints)
+  - `backend/app/core/config.py` (Updated with dev/test defaults for mock mode)
+  - `backend/tests/conftest.py` (NEW: Pytest fixtures with mocked JWT auth)
+  - `backend/tests/test_health.py` (NEW: Health check contract test)
+  - `backend/tests/test_docs_contract.py` (NEW: Document endpoints contract tests)
+  - `backend/tests/test_chat_contract.py` (NEW: Chat endpoints contract tests)
+  - `backend/tests/test_policies_contract.py` (NEW: Policy endpoints contract tests)
+  - `backend/tests/test_providers_contract.py` (NEW: Provider endpoints contract tests)
+  - `backend/Makefile` (NEW: Dev/test/lint/bootstrap targets)
+  - `backend/scripts/dev_bootstrap.sh` (NEW: One-command dev environment setup)
+  - `backend/scripts/run_migrations.sh` (NEW: Migration runner script)
+  - `backend/requirements.txt` (Added pytest, pytest-asyncio, ruff)
+  - `.github/workflows/backend_ci.yml` (NEW: GitHub Actions CI workflow)
+  - `docs/architecture/contracts.md` (NEW: API contracts documentation)
+- **Contracts changed?** No — Contract tests validate existing response shapes. All contracts documented in `contracts.py` match current API behavior. Tests ensure these shapes never break.
+- **Next TODO / dependencies:**
+  - Run `make test` locally to verify all contract tests pass
+  - Verify CI workflow passes on PR
+  - Frontend team can reference `contracts.py` for guaranteed response shapes
+  - Consider adding integration tests for Supabase mode (when env vars present)
+
+### 2026-02-06 23:00:02 EST
+- **Owner:** Abdoul
+- **Summary:** Implemented Pillar C backend v0: provider search with in-network scoring. Added cache-first provider search with MockProviderSource adapter, policy-aware in-network scoring using RAG retrieval, provider normalization and distance calculation, and weighted heuristics for network status evaluation. Upgraded `GET /v1/providers/search` to return providers sorted by network confidence and distance, and added `GET /v1/providers/{provider_id}` endpoint. All scoring is deterministic and debuggable with user-friendly reasons.
+- **Files changed:**
+  - `backend/app/api/v1/providers.py` (Rewrote with caching, scoring, policy-aware evaluation)
+  - `backend/app/models/schemas.py` (Updated Provider schema with network status object, added NetworkStatus, NetworkEvidence, CenterPoint, CacheInfo schemas)
+  - `backend/app/services/providers/source.py` (NEW: ProviderSource adapter interface with MockProviderSource implementation)
+  - `backend/app/services/providers/normalizer.py` (NEW: Provider normalization and distance calculation)
+  - `backend/app/services/providers/search.py` (NEW: Cache-first provider search service)
+  - `backend/app/services/network/in_network.py` (NEW: Policy-aware in-network scoring)
+  - `backend/app/services/network/heuristics.py` (NEW: Network scoring heuristics and weights)
+  - `backend/app/services/db/providers_repo.py` (NEW: Provider cache repository operations)
+  - `docs/architecture/provider_search.md` (NEW: Provider search architecture specification)
+  - `docs/architecture/in_network_scoring.md` (NEW: In-network scoring specification)
+- **Contracts changed?** Yes — Response shape updated:
+  - `GET /v1/providers/search` now returns `{ query, center, radius_miles, providers[], cache: { hit, ttl_seconds } }` with providers including `network` object `{ status, confidence, reasons[], evidence[] }`
+  - Provider schema updated: `provider_id`, `lat`, `lng`, `distance_miles`, `types[]`, `network` object (replaces simple `network_status` string)
+  - Added `GET /v1/providers/{provider_id}` endpoint returning single provider with network scoring
+- **Next TODO / dependencies:**
+  - Test provider search with caching (verify cache hits on repeated queries)
+  - Test policy-aware scoring with ingested policy documents
+  - Abhay can integrate Google Places API by implementing ProviderSource interface
+  - Consider adding dedicated `search_cache` table for persistent caching (currently in-memory)
+  - Mobile team can now display providers on map with in-network confidence indicators
+
+### 2026-02-06 22:58:20 EST
+- **Owner:** Abdoul
+- **Summary:** Implemented insurance-aware RAG pipeline for Pillar B. Added policy document ingestion (upload, PDF extraction, chunking, embedding, vector storage), RAG retrieval with vector search, and upgraded chat endpoint to return grounded responses with citations. All services include fallback behavior (deterministic embeddings, stub responses) when OpenAI key missing. Chat now persists messages and citations to database.
+- **Files changed:**
+  - `backend/app/core/config.py` (Added embedding model and dimension settings)
+  - `backend/app/api/v1/policies.py` (NEW: POST /upload, POST /{doc_id}/ingest endpoints)
+  - `backend/app/api/v1/chat.py` (Rewrote with RAG retrieval, citation generation, message persistence)
+  - `backend/app/api/router.py` (Added policies router)
+  - `backend/app/models/schemas.py` (Added PolicyIngestResponse schema)
+  - `backend/app/services/policies/pdf_extract.py` (NEW: PDF text extraction with pdfplumber/pypdf)
+  - `backend/app/services/policies/chunker.py` (NEW: Text chunking with overlap)
+  - `backend/app/services/policies/ingest.py` (NEW: Policy ingestion orchestrator)
+  - `backend/app/services/rag/embedder.py` (NEW: Embedding service with OpenAI and deterministic hash fallback)
+  - `backend/app/services/rag/retriever.py` (NEW: Vector search in policy_chunks with user filtering)
+  - `backend/app/services/rag/generator.py` (NEW: Response generation with LLM or stub)
+  - `backend/app/services/db/policies_repo.py` (NEW: Policy chunks database operations)
+  - `backend/app/services/storage/supabase_storage.py` (Updated to handle policy paths)
+  - `backend/requirements.txt` (Added pdfplumber, pypdf, openai)
+  - `docs/architecture/rag_pipeline.md` (NEW: RAG pipeline architecture specification)
+- **Contracts changed?** Yes — Additive changes only:
+  - `POST /v1/policies/upload` returns same shape as docs/upload (reuses DocumentUploadResponse)
+  - `POST /v1/policies/{doc_id}/ingest` returns `{ doc_id, status, chunks_created, embedding_model, notes }`
+  - `POST /v1/chat/sessions/{session_id}/messages` now returns citations from actual policy chunks (same response shape, but citations reference real chunks)
+  - Chat messages persisted to database with citations in `assistant_response` JSONB field
+- **Next TODO / dependencies:**
+  - Test policy upload → ingest → chat flow end-to-end
+  - Verify pgvector cosine similarity search works correctly in Supabase
+  - Consider implementing proper vector search via Supabase RPC if client-side approach insufficient
+  - Mobile team can now upload policies and get grounded chat responses with citations
+  - Abhay can reuse policy language for network rules
+
+### 2026-02-06 22:52:16 EST
+- **Owner:** Abdoul
+- **Summary:** Implemented real document lifecycle with Supabase Storage integration. Added storage service for signed upload/download URLs, document analyzer service with OpenAI stub, database service for persistence, and PHI-safe logging. Updated `/v1/docs/upload` to create document records and return signed upload URLs, `/v1/docs/{doc_id}/analyze` to fetch files, run analysis, and persist extractions, and added `GET /v1/docs/{doc_id}` endpoint. All endpoints maintain mock fallback when storage/DB not configured.
+- **Files changed:**
+  - `backend/app/core/config.py` (Added storage bucket, signed URL expiration, OpenAI API key env vars)
+  - `backend/app/core/logging.py` (NEW: PHI-safe logging utilities)
+  - `backend/app/api/v1/docs.py` (Rewrote with real storage/DB logic + mock fallback; added GET endpoint)
+  - `backend/app/models/schemas.py` (Updated DocumentUploadResponse to include upload info object; made extraction optional in DocumentAnalysisResponse)
+  - `backend/app/services/storage/supabase_storage.py` (NEW: Supabase Storage service with signed URLs)
+  - `backend/app/services/db/supabase_db.py` (NEW: Database service for documents, extractions, line_items)
+  - `backend/app/services/docs/analyzer.py` (NEW: Document analyzer with OpenAI stub, mock fallback)
+  - `backend/app/services/docs/parser.py` (NEW: Normalize extraction results to DB schema)
+  - `backend/supabase/migrations/0002_storage_buckets.sql` (NEW: Storage bucket setup documentation)
+  - `docs/architecture/doc_pipeline.md` (NEW: Document processing pipeline specification)
+- **Contracts changed?** Yes — Additive changes only:
+  - `POST /v1/docs/upload` now returns `{ doc: {...}, upload: { bucket, path, signed_url, expires_in } }` (added `upload` object, kept `doc` object)
+  - `POST /v1/docs/{doc_id}/analyze` and `GET /v1/docs/{doc_id}` now include optional `warning` field when using mock fallback
+  - `GET /v1/docs/{doc_id}` returns `extraction: null` if not analyzed (backward compatible)
+- **Next TODO / dependencies:**
+  - Create Supabase Storage bucket "documents" via dashboard/CLI
+  - Configure `SUPABASE_STORAGE_BUCKET` and `SIGNED_URL_EXPIRES_IN` in .env
+  - Test full upload → analyze → get flow with real Supabase instance
+  - Implement OpenAI Vision API integration in analyzer (currently stub)
+  - Mobile team can now upload files directly to signed URLs
+
+### 2026-02-06 22:47:14 EST
+- **Owner:** Abdoul
+- **Summary:** Stand up backend "spine" with FastAPI app, versioned /v1 API endpoints (docs, chat, providers), JWT auth via Supabase, and complete database schema with migrations. All endpoints return deterministic mock responses matching specified contract shapes for immediate mobile integration.
+- **Files changed:**
+  - `backend/app/main.py` (FastAPI app with CORS, health check, router setup)
+  - `backend/app/core/config.py` (Pydantic Settings configuration)
+  - `backend/app/core/security.py` (JWT verification with Supabase)
+  - `backend/app/api/router.py` (API router aggregation)
+  - `backend/app/api/v1/docs.py` (POST /upload, POST /{doc_id}/analyze)
+  - `backend/app/api/v1/chat.py` (POST /sessions, POST /sessions/{id}/messages)
+  - `backend/app/api/v1/providers.py` (GET /search)
+  - `backend/app/models/schemas.py` (Pydantic schemas matching mock payload shapes)
+  - `backend/supabase/migrations/0001_init.sql` (Complete schema: documents, doc_extractions, line_items, policy_chunks, chat_sessions, chat_messages, providers_cache, network_rules with pgvector and RLS)
+  - `backend/supabase/seed/dev_seed.sql` (Sample provider data)
+  - `backend/pyproject.toml` (Poetry dependencies)
+  - `backend/requirements.txt` (pip dependencies)
+  - `backend/README.md` (Setup and API documentation)
+- **Contracts changed?** Yes — Established initial API contracts matching state.md v0 contracts with mock implementations. Endpoints return deterministic mock JSON matching specified shapes (document analysis with extraction, chat responses with citations, provider search results).
+- **Next TODO / dependencies:**
+  - Apply Supabase migration to project database
+  - Configure Supabase Storage bucket for document uploads
+  - Mobile team can start integrating against mock endpoints
+  - Replace mock responses with real AI/ML logic (OCR, RAG, provider search) as components become available

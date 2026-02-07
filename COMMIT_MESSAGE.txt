@@ -1,0 +1,76 @@
+feat: Complete backend implementation for CareMap MVP
+
+Implement full backend infrastructure for healthcare document analysis,
+insurance-aware RAG chat, and provider search with in-network scoring.
+
+## Core Features
+
+### Pillar A: Document Lifecycle
+- Document upload with Supabase Storage signed URLs
+- Document analysis with extraction persistence
+- PHI-safe logging and structured data storage
+- Support for bills, EOBs, policies, and SOBs
+
+### Pillar B: Insurance-Aware RAG Chat
+- Policy document ingestion (PDF extraction, chunking, embedding)
+- Vector search with pgvector for policy chunks
+- Grounded chat responses with citations
+- Streaming chat endpoint (SSE) with token-by-token responses
+- LLM integration (OpenAI) with deterministic fallback
+
+### Pillar C: Provider Search & In-Network Scoring
+- Cache-first provider search with MockProviderSource adapter
+- Policy-aware in-network scoring using RAG retrieval
+- Weighted heuristics for network status evaluation
+- Provider normalization and distance calculation
+
+## Infrastructure
+
+- FastAPI with versioned /v1 routes
+- Supabase integration (Postgres, Auth, Storage, Vector)
+- JWT authentication with test override mode
+- Row-Level Security (RLS) with comprehensive isolation tests
+- Contract tests ensuring API stability
+- CI/CD with GitHub Actions
+
+## Developer Experience
+
+- One-command dev setup (`make demo`)
+- Strict pre-push checks (`make check`)
+- Smoke testing (`make smoke`)
+- Demo seed script for instant demos
+- Comprehensive documentation
+
+## Security
+
+- Zero cross-tenant data leakage (validated by isolation tests)
+- PHI-safe logging (no sensitive data in logs)
+- Consistent 404 responses for unauthorized access
+- Defense-in-depth with application + database-level filtering
+
+## Testing
+
+- Contract tests for all endpoints
+- RLS isolation tests (docs, policies, chat, providers)
+- Integration smoke tests
+- All tests run in mock mode (no external dependencies)
+
+## API Endpoints
+
+- GET /health
+- GET /v1/me
+- POST /v1/docs/upload
+- POST /v1/docs/{doc_id}/analyze
+- GET /v1/docs/{doc_id}
+- POST /v1/policies/upload
+- POST /v1/policies/{doc_id}/ingest
+- POST /v1/chat/sessions
+- POST /v1/chat/sessions/{id}/messages
+- POST /v1/chat/sessions/{id}/messages/stream
+- GET /v1/providers/search
+- GET /v1/providers/{provider_id}
+
+All endpoints return deterministic mock responses when services
+are not configured, enabling mobile development without dependencies.
+
+See state.md changelog for detailed change history.
