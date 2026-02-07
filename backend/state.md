@@ -215,13 +215,65 @@ GET  /v1/chat/sessions/{session_id}
 - ⏳ Doc upload/analyze endpoints (Abdoul)
 - ⏳ Chat endpoints (Abdoul)
 
-<<<<<<< HEAD
+### Abhay (Integrations) depends on:
+- ✅ Google Maps API key (configured in .env)
+- ✅ Supabase project + Edge Functions
+- ✅ Provider search abstraction (complete)
+
+### Abdoul (Backend) depends on:
+- ✅ Supabase project setup
+- ⏳ Migrations for Pillar A/B tables
+- ⏳ Storage buckets for documents
+- ℹ️ Can use `integrations-abhay/shared/contracts.py` for provider types
+
 ## 9) Next Milestones (48–72h hackathon cadence)
 M1: Backend boots + Supabase schema migrated + healthcheck
 M2: Mobile boots + chat-first UI + mock responses wired
 M3: Doc upload + analyze → summary shown in app
 M4: Policy ingest → embeddings → RAG answer with citations
 M5: Map search → in-network shell + provider list rendering
+
+## 10) Integration Notes
+
+### For Kurt — Using the Integrations Layer
+1. See `integrations-abhay/docs/kurt-dropin.md` for copy-paste code
+2. Use `source: "mock"` during UI development (no backend needed)
+3. Switch to `source: "cache"` when DB is seeded
+4. Display network badges as "Likely In-Network" for `source: "heuristic"`
+
+### For Abdoul — Merging to Main Repo
+1. See `integrations-abhay/docs/merge-strategy.md`
+2. **Option A (Vendor Mode):** Use integrations-abhay as-is, call Edge Functions directly
+3. **Option B (Promote Mode):** Run `./integrations-abhay/scripts/promote_to_main.sh --dry-run`
+4. SQL files in `integrations-abhay/supabase/sql/` can be merged into migrations
+
+### Quick Test
+```bash
+cd integrations-abhay
+export FUNCTIONS_BASE_URL="http://localhost:54321/functions/v1"
+./scripts/demo_smoke_test.sh
+```
+
+## 11) Milestones (status)
+
+| Milestone | Description | Status |
+|-----------|-------------|--------|
+| M1 | Backend boots + Supabase schema + healthcheck | ⏳ Pending |
+| M2 | Mobile boots + chat UI + mock responses | ⏳ Pending |
+| M3 | Doc upload + analyze → summary in app | ⏳ Pending |
+| M4 | Policy ingest → embeddings → RAG with citations | ⏳ Pending |
+| **M5** | **Provider search + network status + list rendering** | **✅ Complete (integrations-abhay)** |
+
+### M5 Deliverables (Complete)
+- [x] Edge Functions: `providers-search`, `plans-search`
+- [x] Database schema: `providers`, `insurance_plans`, `provider_networks`
+- [x] Seed data: ~30 Pittsburgh providers, 3 demo plans, network mappings
+- [x] Google Places API integration with caching
+- [x] Network status overlay (seed → heuristic → unknown)
+- [x] Mock mode for offline development
+- [x] Mobile demo app scaffold
+- [x] Documentation + scripts
+- [x] DEV_BYPASS_AUTH for hackathon demos
 
 ## Changelog
 
@@ -418,57 +470,3 @@ M5: Map search → in-network shell + provider list rendering
   - Configure Supabase Storage bucket for document uploads
   - Mobile team can start integrating against mock endpoints
   - Replace mock responses with real AI/ML logic (OCR, RAG, provider search) as components become available
-=======
-### Abhay (Integrations) depends on:
-- ✅ Google Maps API key (configured in .env)
-- ✅ Supabase project + Edge Functions
-- ✅ Provider search abstraction (complete)
-
-### Abdoul (Backend) depends on:
-- ✅ Supabase project setup
-- ⏳ Migrations for Pillar A/B tables
-- ⏳ Storage buckets for documents
-- ℹ️ Can use `integrations-abhay/shared/contracts.py` for provider types
-
-## 9) Integration Notes
-
-### For Kurt — Using the Integrations Layer
-1. See `integrations-abhay/docs/kurt-dropin.md` for copy-paste code
-2. Use `source: "mock"` during UI development (no backend needed)
-3. Switch to `source: "cache"` when DB is seeded
-4. Display network badges as "Likely In-Network" for `source: "heuristic"`
-
-### For Abdoul — Merging to Main Repo
-1. See `integrations-abhay/docs/merge-strategy.md`
-2. **Option A (Vendor Mode):** Use integrations-abhay as-is, call Edge Functions directly
-3. **Option B (Promote Mode):** Run `./integrations-abhay/scripts/promote_to_main.sh --dry-run`
-4. SQL files in `integrations-abhay/supabase/sql/` can be merged into migrations
-
-### Quick Test
-```bash
-cd integrations-abhay
-export FUNCTIONS_BASE_URL="http://localhost:54321/functions/v1"
-./scripts/demo_smoke_test.sh
-```
-
-## 10) Milestones
-
-| Milestone | Description | Status |
-|-----------|-------------|--------|
-| M1 | Backend boots + Supabase schema + healthcheck | ⏳ Pending |
-| M2 | Mobile boots + chat UI + mock responses | ⏳ Pending |
-| M3 | Doc upload + analyze → summary in app | ⏳ Pending |
-| M4 | Policy ingest → embeddings → RAG with citations | ⏳ Pending |
-| **M5** | **Provider search + network status + list rendering** | **✅ Complete (integrations-abhay)** |
-
-### M5 Deliverables (Complete)
-- [x] Edge Functions: `providers-search`, `plans-search`
-- [x] Database schema: `providers`, `insurance_plans`, `provider_networks`
-- [x] Seed data: ~30 Pittsburgh providers, 3 demo plans, network mappings
-- [x] Google Places API integration with caching
-- [x] Network status overlay (seed → heuristic → unknown)
-- [x] Mock mode for offline development
-- [x] Mobile demo app scaffold
-- [x] Documentation + scripts
-- [x] DEV_BYPASS_AUTH for hackathon demos
->>>>>>> fb707913a07695ea69f4dfb838201301c8947b09
