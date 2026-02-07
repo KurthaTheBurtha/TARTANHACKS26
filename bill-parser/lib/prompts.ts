@@ -1,5 +1,5 @@
 /**
- * System prompt for Claude to parse a medical bill PDF and return structured JSON.
+ * System prompt for the LLM to parse medical bill text and return structured JSON.
  * Output must match the BillData type (see lib/types.ts).
  */
 export const BILL_PARSER_PROMPT = `You are an expert at extracting structured data from medical bills and insurance documents.
