@@ -223,7 +223,7 @@ export default function Dashboard() {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="font-display font-semibold text-lg mb-2">Your Insurance Plan</h3>
-            <p className="text-primary-foreground/80 mb-4">Blue Cross Blue Shield - PPO Gold</p>
+            <p className="text-primary-foreground/80 mb-4">UPMC Health Plan (Find Care uses this for in-network)</p>
             <div className="flex flex-wrap gap-6 text-sm">
               <div>
                 <p className="text-primary-foreground/60">Primary Care Copay</p>
