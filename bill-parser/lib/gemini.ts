@@ -1,26 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-// pdf-parse is CJS; type is optional
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse") as (buffer: Buffer) => Promise<{ text: string }>;
 
 /**
- * Extract text from a PDF buffer. Uses pdf-parse (works for text-based PDFs).
- */
-async function extractTextFromPdf(pdfBase64: string): Promise<string> {
-  const buffer = Buffer.from(pdfBase64, "base64");
-  const { text } = await pdfParse(buffer);
-  const trimmed = (text || "").trim();
-  if (!trimmed) {
-    throw new Error(
-      "No text could be extracted from this PDF. It may be a scanned image—use a text-based PDF or an OCR tool first."
-    );
-  }
-  return trimmed;
-}
-
-/**
- * Parse a medical bill PDF: extract text, then send to Gemini for structured JSON.
- * Same signature as the previous Claude-based parseDocument for drop-in replacement.
+ * Parse a medical bill PDF: send PDF directly to Gemini as inline data (no pdf-parse).
+ * Works in Node.js without browser-only APIs (DOMMatrix, Canvas, etc.).
  */
 export async function parseDocument(
   pdfBase64: string,
@@ -31,20 +13,25 @@ export async function parseDocument(
     throw new Error("GEMINI_API_KEY is not set in environment variables");
   }
 
-  const pdfText = await extractTextFromPdf(pdfBase64);
-
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.5-flash-lite", // PDF-supported; gemini-1.5-flash is deprecated/404
     generationConfig: {
       maxOutputTokens: 4096,
       temperature: 0.1,
     },
   });
 
-  const fullPrompt = `${prompt}\n\n---\n\nDocument text to analyze:\n\n${pdfText}`;
-
-  const result = await model.generateContent(fullPrompt);
+  // Send PDF as inline data so Gemini reads it natively; no pdf-parse (Node-incompatible) needed
+  const result = await model.generateContent([
+    {
+      inlineData: {
+        mimeType: "application/pdf",
+        data: pdfBase64,
+      },
+    },
+    { text: prompt },
+  ]);
 
   const response = result.response;
   if (!response?.candidates?.length) {
@@ -53,7 +40,7 @@ export async function parseDocument(
   }
 
   const part = response.candidates[0].content?.parts?.[0];
-  if (!part || !("text" in part)) {
+  if (!part || !("text" in part) || typeof part.text !== "string") {
     throw new Error("Gemini API error: Empty or invalid response");
   }
 

@@ -238,6 +238,18 @@ export default function DocumentsPage() {
     setResult(null);
     const loadingId = showLoading("Analyzing your bill...");
 
+    function isNetworkError(e: unknown): boolean {
+      if (e instanceof TypeError) return true;
+      return e instanceof Error && (e.message === "Failed to fetch" || e.message.includes("NetworkError"));
+    }
+
+    function userFacingMessage(e: unknown): string {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      if (msg === "Failed to fetch" || msg.includes("NetworkError"))
+        return `Couldn't reach the server. If you use the Python backend, make sure it's running at ${BACKEND_URL}. Otherwise check your network or try again.`;
+      return msg;
+    }
+
     try {
       const formData = new FormData();
       formData.append("bill_pdf", file);
@@ -267,9 +279,28 @@ export default function DocumentsPage() {
         toast.success("Bill analyzed successfully", { id: loadingId });
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to analyze bill";
-      setError(message);
-      toast.error(message, { id: loadingId });
+      if (isNetworkError(err)) {
+        try {
+          const fallbackForm = new FormData();
+          fallbackForm.append("file", file);
+          const res = await fetch("/api/parse-bill", { method: "POST", body: fallbackForm });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data?.error ?? "Parse failed");
+          startTransition(() => {
+            setResult(data as BillData);
+            toast.success("Bill analyzed successfully", { id: loadingId });
+          });
+          return;
+        } catch (fallbackErr) {
+          const fallbackMsg = fallbackErr instanceof Error ? fallbackErr.message : "Parse failed";
+          setError(`Backend unreachable. Local parser failed: ${fallbackMsg}`);
+          toast.error(`Backend unreachable. Local parser failed: ${fallbackMsg}`, { id: loadingId });
+        }
+      } else {
+        const message = userFacingMessage(err);
+        setError(message);
+        toast.error(message, { id: loadingId });
+      }
     } finally {
       setLoading(false);
     }
@@ -311,7 +342,11 @@ export default function DocumentsPage() {
             </p>
           </div>
           <button 
-            onClick={handleReset}
+            onClick={() => {
+              handleReset();
+              // Open file picker after reset so upload section is visible and input exists
+              setTimeout(() => document.getElementById("file-input")?.click(), 50);
+            }}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semibold transition-colors shadow-card"
           >
             <Upload className="w-5 h-5" />
