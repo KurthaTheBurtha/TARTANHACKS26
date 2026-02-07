@@ -29,7 +29,7 @@ export default function UploadPage() {
         {/* Header */}
         <header className="mb-12">
           <h1 className="text-4xl font-bold text-slate-900">
-            Medical Bill Analyzer
+            CareMap — Bill Analyzer
           </h1>
           <p className="mt-2 text-lg text-slate-600">
             Upload your medical bill to find errors and overcharges

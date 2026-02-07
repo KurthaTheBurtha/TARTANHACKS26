@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -7,7 +8,15 @@ export default function Footer() {
         <div className="grid gap-8 md:grid-cols-3">
           {/* Brand */}
           <div>
-            <p className="text-xl font-bold">HealthAdvocate</p>
+            <Link href="/" className="inline-block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded">
+              <Image
+                src="/logo.png"
+                alt="CareMap"
+                width={160}
+                height={48}
+                className="h-12 w-auto object-contain object-left"
+              />
+            </Link>
             <p className="mt-2 text-sm text-slate-400">
               Stop overpaying for healthcare
             </p>
@@ -75,7 +84,7 @@ export default function Footer() {
         {/* Bottom row */}
         <div className="mt-8 border-t border-slate-800 pt-8">
           <p className="text-center text-sm text-slate-400">
-            © 2025 HealthAdvocate. Built for TartanHacks 2026
+            © 2025 CareMap. Built for TartanHacks 2026
           </p>
         </div>
       </div>

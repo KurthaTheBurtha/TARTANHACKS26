@@ -1,8 +1,8 @@
-# Medical Bill Analyzer
+# CareMap
 
 **AI-powered medical bill analysis that finds errors and helps you save money.**
 
-Upload your medical bill PDF and get a structured breakdown of charges, line items, CPT codes, and insurance information—powered by Claude AI.
+Upload your medical bill PDF and get a structured breakdown of charges, line items, CPT codes, and insurance information—powered by Google Gemini (free tier).
 
 ---
 
@@ -24,7 +24,7 @@ Upload your medical bill PDF and get a structured breakdown of charges, line ite
 | Framework | Next.js 14 (App Router) |
 | Language | TypeScript |
 | Styling | Tailwind CSS |
-| AI | Anthropic Claude (claude-sonnet-4-20250514) |
+| AI | Google Gemini (gemini-1.5-flash, free tier) |
 | Icons | Lucide React |
 | UI Components | Radix UI (Slot) |
 
@@ -50,10 +50,10 @@ npm install
 Create a `.env.local` file in the project root:
 
 ```env
-ANTHROPIC_API_KEY=your_api_key_here
+GEMINI_API_KEY=your_api_key_here
 ```
 
-Get your API key from [Anthropic Console](https://console.anthropic.com/).
+Get a free API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ### 4. Run the development server
 
@@ -148,7 +148,7 @@ Parses a medical bill PDF and returns structured data.
 │   └── bill-upload.tsx       # Upload UI with drag-drop, validation, loading
 ├── lib/
 │   ├── claude.ts             # Anthropic SDK client & parseDocument()
-│   ├── prompts.ts            # BILL_PARSER_PROMPT for Claude
+│   ├── prompts.ts            # BILL_PARSER_PROMPT for the LLM
 │   └── types.ts              # BillData, LineItem, InsuranceInfo types
 ├── .env.local                # API key (not committed)
 └── package.json

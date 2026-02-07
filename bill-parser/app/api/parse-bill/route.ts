@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { parseDocument } from "@/lib/claude";
+import { parseDocument } from "@/lib/gemini";
 import { BILL_PARSER_PROMPT } from "@/lib/prompts";
 import type { BillData } from "@/lib/types";
 
@@ -136,7 +136,7 @@ export async function POST(request: Request) {
 
     console.log("[parse-bill] Converted to base64, length:", pdfBase64.length);
 
-    // Call Claude with timeout
+    // Call LLM (Gemini) with timeout
     let rawResponse: string;
     try {
       rawResponse = await withTimeout(
@@ -153,10 +153,16 @@ export async function POST(request: Request) {
           { status: 504 }
         );
       }
+      if (err.message.includes("No text could be extracted")) {
+        return NextResponse.json(
+          { error: err.message },
+          { status: 422 }
+        );
+      }
       throw err;
     }
 
-    console.log("[parse-bill] Claude response length:", rawResponse.length);
+    console.log("[parse-bill] AI response length:", rawResponse.length);
 
     // Check for scanned/poor quality PDF indicators
     if (isScannedOrPoorQualityResponse(rawResponse)) {
@@ -217,15 +223,18 @@ export async function POST(request: Request) {
     console.error("[parse-bill] Unexpected error:", err.message);
     console.error("[parse-bill] Stack:", err.stack);
 
-    if (err.message.includes("ANTHROPIC_API_KEY")) {
+    if (err.message.includes("GEMINI_API_KEY")) {
       return NextResponse.json(
-        { error: "API configuration error" },
+        {
+          error:
+            "API key not configured. Add GEMINI_API_KEY to .env.local (get a free key at aistudio.google.com/app/apikey) and restart the dev server.",
+        },
         { status: 500 }
       );
     }
-    if (err.message.includes("Anthropic API")) {
+    if (err.message.includes("Gemini API")) {
       return NextResponse.json(
-        { error: "Failed to process bill with AI service" },
+        { error: err.message.includes("Empty") ? "AI returned an empty response. Try again." : "Failed to process bill with AI service." },
         { status: 500 }
       );
     }
