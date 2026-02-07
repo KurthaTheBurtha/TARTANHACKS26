@@ -65,9 +65,16 @@ class CreateChatSessionResponse(BaseModel):
     created_at: str
 
 
+class UserNote(BaseModel):
+    subject: str
+    description: str
+    createdAt: str
+
+
 class CreateChatMessageRequest(BaseModel):
     content: str
     role: str = "user"
+    notes: Optional[List[dict]] = None
 
 
 class CreateChatStreamRequest(BaseModel):

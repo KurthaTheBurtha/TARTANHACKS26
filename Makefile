@@ -1,5 +1,10 @@
 # CareMap — root Makefile for local dev (backend + frontend)
 # Prerequisites: Python 3.11+, Node 18+, pip, npm
+#
+# Architecture:
+#   - frontend/   = Next.js + bill-parser (POST /api/parse-bill) on port 3000
+#   - backend/    = FastAPI (CareMap, docs, chat, providers) on port 8000
+#   - Backend calls frontend's /api/parse-bill when BILL_PARSER_URL is set
 
 .PHONY: dev-backend dev-frontend dev-mobile dev-all install help
 
@@ -7,22 +12,22 @@
 help:
 	@echo "CareMap local dev targets:"
 	@echo "  make dev-backend   — start FastAPI backend (reload, 0.0.0.0:8000)"
-	@echo "  make dev-frontend  — start Next.js web app (bill-parser, port 3000)"
+	@echo "  make dev-frontend  — start Next.js (frontend + bill-parser) on port 3000"
 	@echo "  make dev-mobile    — start Expo app (integrations-abhay/mobile)"
 	@echo "  make dev-all       — start backend + frontend concurrently"
 	@echo "  make install       — install backend + frontend deps (no mobile)"
 	@echo ""
-	@echo "Optional: BACKEND_PORT=8000, copy .env.example -> .env in backend/ and bill-parser/.env.local"
+	@echo "Optional: copy .env.example -> .env at repo root; set BILL_PARSER_URL=http://localhost:3000"
 
 # Backend: FastAPI with reload, bind 0.0.0.0, port from env or 8000
 dev-backend:
 	@echo "Starting backend (FastAPI) at http://0.0.0.0:$${BACKEND_PORT:-8000} ..."
 	@cd backend && pip install -q -r requirements.txt && uvicorn app.main:app --reload --host 0.0.0.0 --port $${BACKEND_PORT:-8000}
 
-# Frontend: Next.js (bill-parser) — CareMap page at /caremap
+# Frontend: Next.js (includes bill-parser at /api/parse-bill) — CareMap at /caremap
 dev-frontend:
-	@echo "Starting frontend (Next.js) at http://localhost:3000 ..."
-	@cd bill-parser && npm install && npm run dev
+	@echo "Starting frontend (Next.js + bill-parser) at http://localhost:3000 ..."
+	@cd frontend && npm install && npm run dev
 
 # Mobile: Expo (optional)
 dev-mobile:
@@ -33,13 +38,13 @@ dev-mobile:
 dev-all:
 	@echo "Starting backend + frontend (backend in background)..."
 	@(cd backend && pip install -q -r requirements.txt && uvicorn app.main:app --reload --host 0.0.0.0 --port $${BACKEND_PORT:-8000}) & \
-	(cd bill-parser && npm install && npm run dev); \
+	(cd frontend && npm install && npm run dev); \
 	wait
 
-# Install deps only (backend + bill-parser)
+# Install deps only (backend + frontend)
 install:
 	@echo "Installing backend deps..."
 	@cd backend && pip install -r requirements.txt
 	@echo "Installing frontend deps..."
-	@cd bill-parser && npm install
+	@cd frontend && npm install
 	@echo "Done. Run make dev-backend and make dev-frontend (or make dev-all)."

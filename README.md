@@ -12,7 +12,9 @@ Unified flow: medical bill breakdown + insurance-aware guidance + in-network nav
 
 ---
 
-## Run locally (minimal friction)
+## Run locally
+
+See **[RUN.md](RUN.md)** for step-by-step instructions. Quick version:
 
 ### 1. Environment (optional for first run)
 
@@ -42,7 +44,7 @@ From the **repo root**:
 | Command | What it does |
 |--------|----------------|
 | `make dev-backend` | Start FastAPI at **http://0.0.0.0:8000** (reload, port from `BACKEND_PORT` if set) |
-| `make dev-frontend` | Start Next.js (bill-parser) at **http://localhost:3000** — CareMap page: `/caremap` |
+| `make dev-frontend` | Start Next.js (frontend + bill-parser) at **http://localhost:3000** — CareMap: `/caremap` |
 | `make dev-all` | Start backend + frontend together (backend in background) |
 | `make dev-mobile` | Start Expo app in `integrations-abhay/mobile` (optional) |
 | `make install` | Install backend + frontend deps only |
@@ -99,7 +101,7 @@ make dev-frontend
 ## Repo layout
 
 - **backend/** — FastAPI + AI/RAG. Key endpoint: `POST /v1/caremap/ingest`, `GET /v1/caremap/health`. Uses `backend/Makefile` for tests/lint.
-- **bill-parser/** — Next.js: bill upload + CareMap full-flow page at `/caremap`.
+- **frontend/** — Next.js: bill-parser (`/api/parse-bill`) + CareMap page at `/caremap`.
 - **integrations-abhay/** — Supabase Edge Functions + Expo mobile demo (optional); backend works with mocks if not configured.
 
 ---
@@ -133,7 +135,7 @@ If you deploy later, use this as a reference. **No deployment is performed from 
 
 ### Frontend — Web (e.g. Vercel)
 
-- **Build:** `npm install && npm run build` (in `bill-parser/`).
+- **Build:** `npm install && npm run build` (in `frontend/`).
 - **Start:** `npm start` (or Vercel runs this automatically).
 - **Required env:** In root `.env`, set `NEXT_PUBLIC_BACKEND_URL` or `NEXT_PUBLIC_CAREMAP_BACKEND_URL` = your backend URL. Optional: `GEMINI_API_KEY` for bill parsing.
 - **Verify:** Open the deployed URL and hit `/caremap`; health is implied if the CareMap ingest request succeeds.
@@ -148,6 +150,6 @@ If you deploy later, use this as a reference. **No deployment is performed from 
 | Item | Backend | Frontend (web) |
 |------|--------|-----------------|
 | **Required env** | `PORT` (set by host); for demo only: `DEMO_MODE=true` | `NEXT_PUBLIC_BACKEND_URL` or `NEXT_PUBLIC_CAREMAP_BACKEND_URL` |
-| **Build** | `pip install -r requirements.txt` | `npm run build` in `bill-parser/` |
+| **Build** | `pip install -r requirements.txt` | `npm run build` in `frontend/` |
 | **Start** | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | `npm start` (Next.js) |
 | **Health** | `GET /health`, `GET /v1/caremap/health` | App loads and `/caremap` calls backend |

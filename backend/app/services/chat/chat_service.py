@@ -19,16 +19,35 @@ class ChatService:
         session_id: str,
         user_id: str,
         content: str,
-        policy_doc_id: Optional[str] = None
+        policy_doc_id: Optional[str] = None,
+        user_notes: Optional[list] = None,
     ) -> Dict[str, Any]:
         """
         Create a chat message and generate response.
         Returns complete response (non-streaming). Uses shared LLM client (OpenAI/Gemini).
+        When DB not configured, still uses LLM for real responses (no persistence).
         """
         if not db_service.is_configured():
-            # Return mock response
-            return self._get_mock_response(session_id)
-        
+            # No DB: use LLM directly with empty chunks (general Q&A)
+            try:
+                generated = await generate_response(content, [], provider=None, user_notes=user_notes)
+                return {
+                    "session_id": session_id,
+                    "message_id": f"msg_{datetime.now().strftime('%Y%m%d%H%M%S')}",
+                    "assistant": {
+                        "text": generated.text,
+                        "citations": [
+                            {"doc_id": c["doc_id"], "chunk_id": c["chunk_id"], "label": c.get("label", "Policy excerpt")}
+                            for c in generated.citations
+                        ],
+                        "confidence": generated.confidence,
+                        "disclaimer": generated.disclaimer
+                    }
+                }
+            except Exception as e:
+                safe_log_error("LLM fallback failed", e, session_id=session_id)
+                return self._get_mock_response(session_id)
+
         try:
             # Verify session ownership
             session = db_service.client.table("chat_sessions").select("*").eq("id", session_id).eq("user_id", user_id).execute()
@@ -61,7 +80,7 @@ class ChatService:
             
             # Generate response (async; uses LLM client)
             safe_log_info("Generating assistant response", session_id=session_id, chunks_count=len(retrieved_chunks))
-            generated = await generate_response(content, retrieved_chunks)
+            generated = await generate_response(content, retrieved_chunks, user_notes=user_notes)
             
             # Convert citations
             citations = [

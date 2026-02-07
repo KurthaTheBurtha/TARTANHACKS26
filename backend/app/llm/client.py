@@ -16,7 +16,7 @@ class LLMProvider(str, Enum):
 
 # Default models per provider
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
-DEFAULT_GEMINI_MODEL = "gemini-1.5-flash"
+DEFAULT_GEMINI_MODEL = "gemini-2.0-flash"
 
 MOCK_WARNING_PREFIX = "[LLM mock] "
 

@@ -90,7 +90,8 @@ async def create_chat_message(
         result = await chat_service.create_message(
             session_id=session_id,
             user_id=user_id,
-            content=request.content
+            content=request.content,
+            user_notes=request.notes,
         )
         
         from app.models.schemas import AssistantResponse, Citation

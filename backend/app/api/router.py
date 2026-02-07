@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import docs, chat, providers, policies, me, caremap, llm
+from app.api.v1 import docs, chat, providers, policies, me, caremap, llm, notes
 from app.core.config import settings
 
 api_router = APIRouter()
@@ -44,4 +44,10 @@ api_router.include_router(
     llm.router,
     prefix="/llm",
     tags=["llm"]
+)
+
+api_router.include_router(
+    notes.router,
+    prefix="/notes",
+    tags=["notes"]
 )
